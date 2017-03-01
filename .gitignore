@@ -191,3 +191,21 @@ Makefile
 
 ##CCsc##
 *.ccspjt
+*.cof
+*.err
+*.esym
+*.hex
+*.lst
+*.xsym
+*.xlsx
+*.pdsbak
+*.pdsprj
+
+##ISIS##
+*.DBK
+*.SDF
+*.PWI
+
+##LTSpice##
+*.raw
+*.plt
