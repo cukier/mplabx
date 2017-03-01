@@ -51,33 +51,41 @@
 
 #include <libpic30.h>
 
-void __attribute__((__interrupt__, no_auto_psv)) _U1TXInterrupt(void) {
-    IFS0bits.U1TXIF = 0; // Clear TX Interrupt flag
-    U1TXREG = 'a'; // Transmit one character
+//void __attribute__((__interrupt__, no_auto_psv)) _U1TXInterrupt(void) {
+//    IFS0bits.U1TXIF = 0; // Clear TX Interrupt flag
+////    U1TXREG = 'b'; // Transmit one character
+//}
+
+void uart_send(uint8_t c) {
+    while (U1STAbits.UTXBF)
+        ;
+    
+    U1TXREG = c;
+    return;
 }
 
 int main(void) {
-    
+
     U1MODEbits.STSEL = 0;
     U1MODEbits.PDSEL = 0;
     U1MODEbits.ABAUD = 0;
     U1MODEbits.BRGH = 0;
-    
+
     U1BRG = BRGVAL;
-    
+
     U1MODEbits.UARTEN = 1; // Enable UART
     U1STAbits.UTXEN = 1; // Enable UART TX
-    
+
     U1MODEbits.UARTEN = 1;
     U1STAbits.UTXEN = 1;
-    
+
     RPINR18bits.U1RXR = 0; // Assign U1RX To Pin RP0
     RPOR1bits.RP2R = 3; // Assign U1TX To Pin RP2
-    
+
     while (1) {
-        U1TXREG = 'a';
+        U1TXREG = 'c';
         __delay_ms(1000);
     }
-    
+
     return 0;
 }

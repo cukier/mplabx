@@ -185,6 +185,7 @@ $RECYCLE.BIN/
 #*.mk
 nbproject/
 build/
+dist/
 .hg/
 *.hgignore
 Makefile
