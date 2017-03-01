@@ -60,8 +60,6 @@ void uart_init(void) {
 
     U1BRG = BRGVAL; //Baudrate
 
-    U1MODEbits.UARTEN = 1; // Enable UART
-    U1STAbits.UTXEN = 1; // Enable UART TX
     U1MODEbits.UARTEN = 1; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>
     U1STAbits.UTXEN = 1; // Transmit is enabled, UxTX pin is controlled by UARTx
 
