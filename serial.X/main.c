@@ -52,24 +52,28 @@
 #include <libpic30.h>
 #include <stdio.h>
 
-int main(void) {
-    uint8_t cont;
+void uart_init(void) {
+    U1MODEbits.STSEL = 0;   // 1 stop bit
+    U1MODEbits.PDSEL = 0;   // 8-bit data, no parity
+    U1MODEbits.ABAUD = 0;   // Baud rate measurement is disabled or completed
+    U1MODEbits.BRGH = 0;    // Standard Speed mode
 
-    U1MODEbits.STSEL = 0;
-    U1MODEbits.PDSEL = 0;
-    U1MODEbits.ABAUD = 0;
-    U1MODEbits.BRGH = 0;
-
-    U1BRG = BRGVAL;
+    U1BRG = BRGVAL;         //Baudrate
 
     U1MODEbits.UARTEN = 1;  // Enable UART
     U1STAbits.UTXEN = 1;    // Enable UART TX
-    U1MODEbits.UARTEN = 1;
-    U1STAbits.UTXEN = 1;
+    U1MODEbits.UARTEN = 1;  // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>
+    U1STAbits.UTXEN = 1;    // Transmit is enabled, UxTX pin is controlled by UARTx
 
     RPINR18bits.U1RXR = 0;  // Assign U1RX To Pin RP0
     RPOR1bits.RP2R = 3;     // Assign U1TX To Pin RP2
-    __C30_UART = 1;
+    __C30_UART = 1;         // printf
+}
+
+int main(void) {
+    uint8_t cont;
+
+    uart_init();
 
     while (1) {
         printf("Hello %u\n", cont++);
