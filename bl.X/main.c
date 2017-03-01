@@ -34,9 +34,6 @@
 #pragma config SOSCHP = ON
 #pragma config ALTVREF = ALTREFEN
 
-// #pragma config statements should precede project file includes.
-// Use project enums instead of #define for ON and OFF.
-
 #include <xc.h>
 #include <p24FJ1024GB606.h>
 #include <stdint.h>
