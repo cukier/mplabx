@@ -50,17 +50,10 @@
 #define BRGVAL      (((FCY/BAUDRATE)/16)-1)
 
 #include <libpic30.h>
-
-void uart_send(uint8_t c) {
-    while (U1STAbits.UTXBF)
-        ;
-    
-    U1TXREG = c;
-    return;
-}
+#include <stdio.h>
 
 int main(void) {
-    uint8_t s = 'A';
+    uint8_t cont;
 
     U1MODEbits.STSEL = 0;
     U1MODEbits.PDSEL = 0;
@@ -76,15 +69,10 @@ int main(void) {
 
     RPINR18bits.U1RXR = 0;  // Assign U1RX To Pin RP0
     RPOR1bits.RP2R = 3;     // Assign U1TX To Pin RP2
+    __C30_UART = 1;
 
     while (1) {
-        uart_send(s);
-        uart_send('\n');
-        s++;
-        
-        if (s == 'z')
-            s = 'A';
-        
+        printf("Hello %u\n", cont++);
         __delay_ms(500);
     }
 
