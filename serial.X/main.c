@@ -46,15 +46,10 @@
 
 #define FOSC        (16000000ULL)
 #define FCY         (FOSC/2)
-#define BAUDRATE    9600
-#define BRGVAL      ((FCY/BAUDRATE)/16)-1
+#define BAUDRATE    (9600)
+#define BRGVAL      (((FCY/BAUDRATE)/16)-1)
 
 #include <libpic30.h>
-
-//void __attribute__((__interrupt__, no_auto_psv)) _U1TXInterrupt(void) {
-//    IFS0bits.U1TXIF = 0; // Clear TX Interrupt flag
-////    U1TXREG = 'b'; // Transmit one character
-//}
 
 void uart_send(uint8_t c) {
     while (U1STAbits.UTXBF)
@@ -65,6 +60,7 @@ void uart_send(uint8_t c) {
 }
 
 int main(void) {
+    uint8_t s = 'A';
 
     U1MODEbits.STSEL = 0;
     U1MODEbits.PDSEL = 0;
@@ -73,18 +69,23 @@ int main(void) {
 
     U1BRG = BRGVAL;
 
-    U1MODEbits.UARTEN = 1; // Enable UART
-    U1STAbits.UTXEN = 1; // Enable UART TX
-
+    U1MODEbits.UARTEN = 1;  // Enable UART
+    U1STAbits.UTXEN = 1;    // Enable UART TX
     U1MODEbits.UARTEN = 1;
     U1STAbits.UTXEN = 1;
 
-    RPINR18bits.U1RXR = 0; // Assign U1RX To Pin RP0
-    RPOR1bits.RP2R = 3; // Assign U1TX To Pin RP2
+    RPINR18bits.U1RXR = 0;  // Assign U1RX To Pin RP0
+    RPOR1bits.RP2R = 3;     // Assign U1TX To Pin RP2
 
     while (1) {
-        U1TXREG = 'c';
-        __delay_ms(1000);
+        uart_send(s);
+        uart_send('\n');
+        s++;
+        
+        if (s == 'z')
+            s = 'A';
+        
+        __delay_ms(500);
     }
 
     return 0;
