@@ -51,12 +51,44 @@
 
 #include <libpic30.h>
 #include <stdio.h>
+#include <stdbool.h>
+
+#define BUFFER_SIZE     512
+
+uint16_t buff_index;
+uint8_t buffer[BUFFER_SIZE];
 
 void __attribute__ ((interrupt,no_auto_psv)) _U1RXInterrupt(void) {
+    buffer[buff_index++] = U1RXREG;
     
+    if (buff_index >= BUFFER_SIZE)
+        buff_index = 0;
+    
+    T1CONbits.TCKPS = 1; //1:8
+    IFS0bits.U1RXIF = 0; //limpa flag int rx     
+    T1CONbits.TON = 1; //liga timer 1
+    PR1 = UINT16_MAX; //periodo timer 1
+}
+
+void __attribute__((__interrupt__, __auto_psv__)) _T1Interrupt(void) {
+    T1CONbits.TON = 0; //desliga timer
+    _T1IF = 0; //deliga flag interrupcao
+}
+
+void tmr1_init() {
+    T1CON = 0; //limpa registrador    
+    _T1IP = 1; //prioriedade interrupcao timer 1 alta    
+    _T1IF = 0; //limpa flag de disparo timer 1
+    _T1IE = 1; //habilita interrupcao timer 1
+    PR1 = 65535;
+    //tempo = 2 x PR1 x TCKPS / FOSC
+    //tempo = 2 x 30000 x 256 / 16000000
+    return;
 }
 
 void uart_init(void) {
+    buff_index = 0;
+    
     U1MODEbits.STSEL = 0; // 1 stop bit
     U1MODEbits.PDSEL = 0; // 8-bit data, no parity
     U1MODEbits.ABAUD = 0; // Baud rate measurement is disabled or completed
@@ -64,13 +96,22 @@ void uart_init(void) {
 
     U1BRG = BRGVAL; //Baudrate
 
-    U1MODEbits.UARTEN = 1; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>    
-    U1STAbits.UTXEN = 1; // Transmit is enabled, UxTX pin is controlled by UARTx
-    U1STAbits.URXEN = 1;
+    U1MODEbits.UARTEN = 0; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>    
+    U1STAbits.UTXEN = 0; // Transmit is enabled, UxTX pin is controlled by UARTx
+    U1STAbits.URXEN = 0; // Recive is enabled
+    
+    IFS0bits.U1RXIF = 0; //limpa falg int rx1
+    IEC0bits.U1RXIE = 1; //habilita interrupcao rx1  
+    
+    IFS0bits.T1IF = 0;
+    IEC0bits.T1IE = 1;
 
-    RPINR18bits.U1RXR = 0; // Assign U1RX To Pin RP0
+    //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
+    RPINR18bits.U1RXR = 4; // Assign U1RX To Pin RP4
     RPOR1bits.RP2R = 3; // Assign U1TX To Pin RP2
     __C30_UART = 1; // printf
+    
+    U1MODEbits.UARTEN = 1;
 }
 
 int main(void) {
