@@ -75,7 +75,6 @@ void __attribute__((__interrupt__, __auto_psv__)) _T1Interrupt(void) {
     _T1IF = 0; //deliga flag interrupcao
     buff_rec = buff_index;
     buff_index = 0;
-    
 }
 
 void tmr1_init() {
