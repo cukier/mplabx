@@ -52,6 +52,10 @@
 #include <libpic30.h>
 #include <stdio.h>
 
+void __attribute__ ((interrupt,no_auto_psv)) _U1RXInterrupt(void) {
+    
+}
+
 void uart_init(void) {
     U1MODEbits.STSEL = 0; // 1 stop bit
     U1MODEbits.PDSEL = 0; // 8-bit data, no parity
@@ -60,8 +64,9 @@ void uart_init(void) {
 
     U1BRG = BRGVAL; //Baudrate
 
-    U1MODEbits.UARTEN = 1; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>
+    U1MODEbits.UARTEN = 1; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>    
     U1STAbits.UTXEN = 1; // Transmit is enabled, UxTX pin is controlled by UARTx
+    U1STAbits.URXEN = 1;
 
     RPINR18bits.U1RXR = 0; // Assign U1RX To Pin RP0
     RPOR1bits.RP2R = 3; // Assign U1TX To Pin RP2
