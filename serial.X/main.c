@@ -55,7 +55,7 @@
 
 #define BUFFER_SIZE     512
 
-uint16_t buff_index;
+uint16_t buff_index, buff_rec;
 uint8_t buffer[BUFFER_SIZE];
 
 void __attribute__ ((interrupt,no_auto_psv)) _U1RXInterrupt(void) {
@@ -71,8 +71,11 @@ void __attribute__ ((interrupt,no_auto_psv)) _U1RXInterrupt(void) {
 }
 
 void __attribute__((__interrupt__, __auto_psv__)) _T1Interrupt(void) {
-    T1CONbits.TON = 0; //desliga timer
+    T1CONbits.TON = 0; //desliga timer    
     _T1IF = 0; //deliga flag interrupcao
+    buff_rec = buff_index;
+    buff_index = 0;
+    
 }
 
 void tmr1_init() {
@@ -110,6 +113,8 @@ void uart_init(void) {
     RPINR18bits.U1RXR = 4; // Assign U1RX To Pin RP4
     RPOR1bits.RP2R = 3; // Assign U1TX To Pin RP2
     __C30_UART = 1; // printf
+    
+    tmr1_init();
     
     U1MODEbits.UARTEN = 1;
 }
