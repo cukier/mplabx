@@ -95,6 +95,7 @@ typedef struct i2c_str {
     uint8_t slv_addr;
     uint16_t rx_size;
     uint16_t tx_size;
+    uint16_t tx_send;
     bool snd;
     bool slv_ack;
 } i2c_t;
@@ -104,12 +105,12 @@ i2c_t i2c1;
 #define EEPROM_ADDR			0xA0
 
 void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
-
     IFS1bits.MI2C1IF = 0;
 
     if (I2C1STATbits.IWCOL) {
         I2C1STATbits.IWCOL = 0;
         i2c1.estado = ENVIA_START;
+        i2c1.snd = false;
 
         return;
     }
@@ -120,6 +121,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 I2C1CONLbits.SEN = 1;
 
                 switch (i2c1.comando) {
+                    case ESCREVE:
                     case LER_ACK:
                         i2c1.estado = EVNIA_ENDERECO;
                         break;
@@ -135,27 +137,41 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 case LER_ACK:
                     i2c1.estado = ENVIA_STOP;
                     break;
+                case ESCREVE:
+                    i2c1.estado = ENVIA_DATA;
+                    i2c1.tx_send = 0;
+                    break;
             }
 
             break;
 
         case ENVIA_DATA:
-            I2C1TRN = i2c1.tx_buffer[0];
-            i2c1.estado = ENVIA_STOP;
+            if (I2C1STATbits.ACKSTAT) {
+                i2c1.estado = ENVIA_STOP;
+            } else {
+                if (i2c1.tx_send < i2c1.tx_size) {
+                    I2C1TRN = i2c1.tx_buffer[i2c1.tx_send];
+                    i2c1.tx_send++;
+                    
+                    if (i2c1.tx_send >= i2c1.tx_size) {
+                        i2c1.estado = ENVIA_STOP;
+                        i2c1.tx_send = 0;
+                    }
+                } else {
+                    i2c1.estado = ENVIA_STOP;
+                    i2c1.tx_send = 0;
+                }
+            }
+
             break;
 
         default:
         case ENVIA_STOP:
-            switch (i2c1.comando) {
-                case LER_ACK:
-                    if (I2C1STATbits.ACKSTAT) { //nao houve ack
-                        i2c1.slv_ack = false;
-                        I2C1STATbits.ACKSTAT = 0;
-                    } else {
-                        i2c1.slv_ack = true;
-                    }
-
-                    break;
+            if (I2C1STATbits.ACKSTAT) { //nao houve ack
+                i2c1.slv_ack = false;
+                I2C1STATbits.ACKSTAT = 0;
+            } else {
+                i2c1.slv_ack = true;
             }
 
             I2C1CONLbits.PEN = 1;
@@ -166,7 +182,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 }
 
 void I2C1_Initialize(void) {
-    
+
     // initialize the hardware
     I2C1BRG = BRGVAL;
     // ACKEN disabled; STRICT disabled; STREN disabled; GCEN disabled; SMEN disabled; DISSLW disabled; I2CSIDL disabled; ACKDT Sends ACK; SCLREL Holds; RSEN disabled; A10M 7 Bit; PEN disabled; RCEN disabled; SEN disabled; I2CEN enabled; 
@@ -195,18 +211,21 @@ bool I2C1_get_ack(uint8_t addr) {
     return i2c1.slv_ack;
 }
 
+bool I2C1_send_data(uint8_t addr, uint8_t *data, uint16_t length) {
+    I2C1_send(ESCREVE, addr, data, length);
+    
+    return i2c1.slv_ack;
+}
+
 int main(void) {
-    uint8_t wo;
+    uint8_t data[3] = {1, 2, 3};
 
     I2C1_Initialize();
-    wo = 0;
     __delay_ms(500);
+    I2C1_send_data(EEPROM_ADDR, data, sizeof(data));
 
     while (1) {
-        I2C1_get_ack(EEPROM_ADDR);
-        __delay_ms(1000);
-        I2C1_get_ack(EEPROM_ADDR + 4);
-        __delay_ms(1000);
+        
     }
 
     return 0;
