@@ -66,6 +66,7 @@
 #define I2C_BRG     ((FCY/2/FSCK)-1)
 #define BAUDRATE    (9600)
 #define BRGVAL      (((FCY/BAUDRATE)/16)-1)
+#define DOUBLE_WORD_ADDRESS
 
 #include <xc.h>
 #include <libpic30.h>
@@ -105,6 +106,7 @@ typedef struct i2c_str {
     uint16_t tx_send;
     bool snd;
     bool slv_ack;
+    bool done;
 } i2c_t;
 
 i2c_t i2c1;
@@ -118,7 +120,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
         I2C1STATbits.IWCOL = 0;
         i2c1.estado = ENVIA_START;
         i2c1.snd = false;
-
+        i2c1.done = true;        
         return;
     }
 
@@ -126,6 +128,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
         case ENVIA_START:
             if (i2c1.snd) {
                 I2C1CONLbits.SEN = 1;
+                i2c1.done = false;
 
                 switch (i2c1.comando) {
                     case ESCREVE:
@@ -161,9 +164,9 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 #ifdef DOUBLE_WORD_ADDRESS
                 if (i2c1.mem_h_send) {
                     i2c1.mem_h_send = false;
-                    I2C1TRN = (i2c1.slv_addr & 0xFF00) >> 8;
+                    I2C1TRN = (i2c1.mem_addr & 0xFF00) >> 8;
                 } else {
-                    I2C1TRN = i2c1.slv_addr & 0xFF;
+                    I2C1TRN = i2c1.mem_addr & 0xFF;
 
                     switch (i2c1.comando) {
                         case ESCREVE:
@@ -218,6 +221,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
             I2C1CONLbits.PEN = 1;
             i2c1.estado = ENVIA_START;
             i2c1.snd = false;
+            i2c1.done = true;
             break;
     }
 }
@@ -249,11 +253,26 @@ void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t *data, uint16_t lenth) {
 
 bool I2C1_get_ack(uint8_t addr) {
     I2C1_send(LER_ACK, addr, NULL, 1);
+    
+    while (!i2c1.done)
+        ;
+    
+    __delay_us(10);
     return i2c1.slv_ack;
 }
 
-bool I2C1_send_data(uint8_t addr, uint8_t *data, uint16_t length) {
+#ifdef DOUBLE_WORD_ADDRESS
+bool I2C1_send_data(uint8_t addr, uint16_t mem, uint8_t *data, uint16_t length) {
+#else
+bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
+#endif
+    i2c1.mem_addr = mem;
     I2C1_send(ESCREVE, addr, data, length);
+        
+    while (!i2c1.done)
+        ;
+    
+    __delay_us(100);
     return i2c1.slv_ack;
 }
 
@@ -262,7 +281,8 @@ int main(void) {
 
     I2C1_Initialize();
     __delay_ms(500);
-    I2C1_send_data(EEPROM_ADDR, data, sizeof (data));
+    if (I2C1_get_ack(EEPROM_ADDR))
+        I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
 
     while (1) {
 
