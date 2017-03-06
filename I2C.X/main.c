@@ -76,7 +76,8 @@
 
 typedef enum i2c_estado_e {
     ENVIA_START,
-    EVNIA_ENDERECO,
+    EVNIA_ENDERECO_SLV,
+    ENVIA_ENDERECO_MEM,
     ENVIA_DATA,
     ENVIA_STOP
 } i2c_state_t;
@@ -93,6 +94,12 @@ typedef struct i2c_str {
     uint8_t *rx_buffer;
     uint8_t *tx_buffer;
     uint8_t slv_addr;
+#ifdef DOUBLE_WORD_ADDRESS
+    uint16_t mem_addr;
+    bool mem_h_send;
+#else
+    uint8_t mem_addr;
+#endif    
     uint16_t rx_size;
     uint16_t tx_size;
     uint16_t tx_send;
@@ -123,14 +130,14 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 switch (i2c1.comando) {
                     case ESCREVE:
                     case LER_ACK:
-                        i2c1.estado = EVNIA_ENDERECO;
+                        i2c1.estado = EVNIA_ENDERECO_SLV;
                         break;
                 }
             }
 
             break;
 
-        case EVNIA_ENDERECO:
+        case EVNIA_ENDERECO_SLV:
             I2C1TRN = i2c1.slv_addr;
 
             switch (i2c1.comando) {
@@ -138,9 +145,43 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                     i2c1.estado = ENVIA_STOP;
                     break;
                 case ESCREVE:
-                    i2c1.estado = ENVIA_DATA;
-                    i2c1.tx_send = 0;
+                    i2c1.estado = ENVIA_ENDERECO_MEM;
+#ifdef DOUBLE_WORD_ADDRESS
+                    i2c1.mem_h_send = true;
+#endif
                     break;
+            }
+
+            break;
+
+        case ENVIA_ENDERECO_MEM:
+            if (I2C1STATbits.ACKSTAT) {
+                i2c1.estado = ENVIA_STOP;
+            } else {
+#ifdef DOUBLE_WORD_ADDRESS
+                if (i2c1.mem_h_send) {
+                    i2c1.mem_h_send = false;
+                    I2C1TRN = (i2c1.slv_addr & 0xFF00) >> 8;
+                } else {
+                    I2C1TRN = i2c1.slv_addr & 0xFF;
+
+                    switch (i2c1.comando) {
+                        case ESCREVE:
+                            i2c1.estado = ENVIA_DATA;
+                            i2c1.tx_send = 0;
+                            break;
+                    }
+                }
+#else
+                I2C1TRN = i2c1.mem_addr;
+
+                switch (i2c1.comando) {
+                    case ESCREVE:
+                        i2c1.estado = ENVIA_DATA;
+                        i2c1.tx_send = 0;
+                        break;
+                }
+#endif
             }
 
             break;
