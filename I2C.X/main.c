@@ -87,12 +87,21 @@ typedef enum i2c_comandos_e {
     LER
 } i2c_comando_t;
 
-#define EEPROM_ADDR			0xA0
+typedef struct i2c_str {
+    i2c_state_t estado;
+    i2c_comando_t comando;
+    uint8_t *rx_buffer;
+    uint8_t *tx_buffer;
+    uint8_t slv_addr;
+    uint16_t rx_size;
+    uint16_t tx_size;
+    bool snd;
+    bool slv_ack;
+} i2c_t;
 
-i2c_state_t i2c1_estado;
-i2c_comando_t i2c1_comando;
-uint8_t slv_data, slv_addr;
-bool snd = false, slv_ack;
+i2c_t i2c1;
+
+#define EEPROM_ADDR			0xA0
 
 void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
@@ -100,63 +109,64 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
     if (I2C1STATbits.IWCOL) {
         I2C1STATbits.IWCOL = 0;
-        i2c1_estado = ENVIA_START;
+        i2c1.estado = ENVIA_START;
 
         return;
     }
 
-    switch (i2c1_estado) {
+    switch (i2c1.estado) {
         case ENVIA_START:
-            if (snd) {
+            if (i2c1.snd) {
                 I2C1CONLbits.SEN = 1;
 
-                switch (i2c1_comando) {
+                switch (i2c1.comando) {
                     case LER_ACK:
-                        i2c1_estado = EVNIA_ENDERECO;
+                        i2c1.estado = EVNIA_ENDERECO;
                         break;
                 }
             }
 
             break;
-        
+
         case EVNIA_ENDERECO:
-            I2C1TRN = slv_addr;
-            
-            switch (i2c1_comando) {
+            I2C1TRN = i2c1.slv_addr;
+
+            switch (i2c1.comando) {
                 case LER_ACK:
-                    i2c1_estado = ENVIA_STOP;
+                    i2c1.estado = ENVIA_STOP;
                     break;
             }
-            
+
             break;
-            
+
         case ENVIA_DATA:
-            I2C1TRN = slv_data;
-            i2c1_estado = ENVIA_STOP;
+            I2C1TRN = i2c1.tx_buffer[0];
+            i2c1.estado = ENVIA_STOP;
             break;
-        
+
         default:
         case ENVIA_STOP:
-            
-            switch (i2c1_comando) {
+            switch (i2c1.comando) {
                 case LER_ACK:
                     if (I2C1STATbits.ACKSTAT) { //nao houve ack
-                        slv_ack = false;
+                        i2c1.slv_ack = false;
                         I2C1STATbits.ACKSTAT = 0;
                     } else {
-                        slv_ack = true;
+                        i2c1.slv_ack = true;
                     }
+
+                    break;
             }
-            
+
             I2C1CONLbits.PEN = 1;
-            i2c1_estado = ENVIA_START;
-            snd = false;
+            i2c1.estado = ENVIA_START;
+            i2c1.snd = false;
             break;
     }
 }
 
 void I2C1_Initialize(void) {
-
+    
     // initialize the hardware
     I2C1BRG = BRGVAL;
     // ACKEN disabled; STRICT disabled; STREN disabled; GCEN disabled; SMEN disabled; DISSLW disabled; I2CSIDL disabled; ACKDT Sends ACK; SCLREL Holds; RSEN disabled; A10M 7 Bit; PEN disabled; RCEN disabled; SEN disabled; I2CEN enabled; 
@@ -171,17 +181,18 @@ void I2C1_Initialize(void) {
     IEC1bits.MI2C1IE = 1;
 }
 
-void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t data) {
-    i2c1_comando = cmd;
-    slv_data = data;
-    slv_addr = addr;
-    snd = true;
+void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t *data, uint16_t lenth) {
+    i2c1.comando = cmd;
+    i2c1.tx_buffer = data;
+    i2c1.tx_size = lenth;
+    i2c1.slv_addr = addr;
+    i2c1.snd = true;
     IFS1bits.MI2C1IF = 1;
 }
 
 bool I2C1_get_ack(uint8_t addr) {
-    I2C1_send(LER_ACK, addr, 0);
-    return slv_ack;
+    I2C1_send(LER_ACK, addr, NULL, 1);
+    return i2c1.slv_ack;
 }
 
 int main(void) {
