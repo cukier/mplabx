@@ -5,55 +5,60 @@
  * Created on 2 de Março de 2017, 13:51
  */
 // FSEC
-#pragma config BWRP = OFF    // Boot Segment Write-Protect bit->Boot Segment may be written
-#pragma config BSS = DISABLED    // Boot Segment Code-Protect Level bits->No Protection (other than BWRP)
-#pragma config BSEN = OFF    // Boot Segment Control bit->No Boot Segment
-#pragma config GWRP = OFF    // General Segment Write-Protect bit->General Segment may be written
-#pragma config GSS = DISABLED    // General Segment Code-Protect Level bits->No Protection (other than GWRP)
-#pragma config CWRP = OFF    // Configuration Segment Write-Protect bit->Configuration Segment may be written
-#pragma config CSS = DISABLED    // Configuration Segment Code-Protect Level bits->No Protection (other than CWRP)
-#pragma config AIVTDIS = OFF    // Alternate Interrupt Vector Table bit->Disabled AIVT
+#pragma config BWRP = OFF               // Boot Segment Write-Protect bit (Boot Segment may be written)
+#pragma config BSS = DISABLED           // Boot Segment Code-Protect Level bits (No Protection (other than BWRP))
+#pragma config BSEN = OFF               // Boot Segment Control bit (No Boot Segment)
+#pragma config GWRP = OFF               // General Segment Write-Protect bit (General Segment may be written)
+#pragma config GSS = DISABLED           // General Segment Code-Protect Level bits (No Protection (other than GWRP))
+#pragma config CWRP = OFF               // Configuration Segment Write-Protect bit (Configuration Segment may be written)
+#pragma config CSS = DISABLED           // Configuration Segment Code-Protect Level bits (No Protection (other than CWRP))
+#pragma config AIVTDIS = OFF            // Alternate Interrupt Vector Table bit (Disabled AIVT)
+
+// FBSLIM
+#pragma config BSLIM = 0x1FFF           // Boot Segment Flash Page Address Limit bits (Boot Segment Flash page address  limit)
+
+// FSIGN
 
 // FOSCSEL
-#pragma config FNOSC = PRI    // Oscillator Source Selection->Primary Oscillator (XT, HS, EC)
-#pragma config PLLMODE = DISABLED    // PLL Mode Selection->No PLL used; PLLEN bit is not available
-#pragma config IESO = ON    // Two-speed Oscillator Start-up Enable bit->Start up device with FRC, then switch to user-selected oscillator source
+#pragma config FNOSC = PRI              // Oscillator Source Selection (Primary Oscillator (XT, HS, EC))
+#pragma config PLLMODE = DISABLED       // PLL Mode Selection (No PLL used; PLLEN bit is not available)
+#pragma config IESO = OFF               // Two-speed Oscillator Start-up Enable bit (Start up with user-selected oscillator source)
 
 // FOSC
-#pragma config POSCMD = HS    // Primary Oscillator Mode Select bits->HS Crystal Oscillator Mode
-#pragma config OSCIOFCN = ON    // OSC2 Pin Function bit->OSC2 is general purpose digital I/O pin
-#pragma config SOSCSEL = ON    // SOSC Power Selection Configuration bits->SOSC is used in crystal (SOSCI/SOSCO) mode
-#pragma config PLLSS = PLL_PRI    // PLL Secondary Selection Configuration bit->PLL is fed by the Primary oscillator
-#pragma config IOL1WAY = ON    // Peripheral pin select configuration bit->Allow only one reconfiguration
-#pragma config FCKSM = CSDCMD    // Clock Switching Mode bits->Both Clock switching and Fail-safe Clock Monitor are disabled
+#pragma config POSCMD = HS              // Primary Oscillator Mode Select bits (HS Crystal Oscillator Mode)
+#pragma config OSCIOFCN = ON            // OSC2 Pin Function bit (OSC2 is general purpose digital I/O pin)
+#pragma config SOSCSEL = ON             // SOSC Power Selection Configuration bits (SOSC is used in crystal (SOSCI/SOSCO) mode)
+#pragma config PLLSS = PLL_PRI          // PLL Secondary Selection Configuration bit (PLL is fed by the Primary oscillator)
+#pragma config IOL1WAY = ON             // Peripheral pin select configuration bit (Allow only one reconfiguration)
+#pragma config FCKSM = CSDCMD           // Clock Switching Mode bits (Both Clock switching and Fail-safe Clock Monitor are disabled)
 
 // FWDT
-#pragma config WDTPS = PS32768    // Watchdog Timer Postscaler bits->1:32768
-#pragma config FWPSA = PR128    // Watchdog Timer Prescaler bit->1:128
-#pragma config FWDTEN = OFF    // Watchdog Timer Enable bits->WDT and SWDTEN disabled
-#pragma config WINDIS = OFF    // Watchdog Timer Window Enable bit->Watchdog Timer in Non-Window mode
-#pragma config WDTWIN = WIN25    // Watchdog Timer Window Select bits->WDT Window is 25% of WDT period
-#pragma config WDTCMX = WDTCLK    // WDT MUX Source Select bits->WDT clock source is determined by the WDTCLK Configuration bits
-#pragma config WDTCLK = LPRC    // WDT Clock Source Select bits->WDT uses LPRC
+#pragma config WDTPS = PS32768          // Watchdog Timer Postscaler bits (1:32,768)
+#pragma config FWPSA = PR128            // Watchdog Timer Prescaler bit (1:128)
+#pragma config FWDTEN = OFF             // Watchdog Timer Enable bits (WDT and SWDTEN disabled)
+#pragma config WINDIS = OFF             // Watchdog Timer Window Enable bit (Watchdog Timer in Non-Window mode)
+#pragma config WDTWIN = WIN25           // Watchdog Timer Window Select bits (WDT Window is 25% of WDT period)
+#pragma config WDTCMX = WDTCLK          // WDT MUX Source Select bits (WDT clock source is determined by the WDTCLK Configuration bits)
+#pragma config WDTCLK = LPRC            // WDT Clock Source Select bits (WDT uses LPRC)
 
 // FPOR
-#pragma config BOREN = ON    // Brown Out Enable bit->Brown Out Enable Bit
-#pragma config LPCFG = OFF    // Low power regulator control->No Retention Sleep
-#pragma config DNVPEN = ENABLE    // Downside Voltage Protection Enable bit->Downside protection enabled using ZPBOR when BOR is inactive
+#pragma config BOREN = OFF              // Brown Out Enable bit (Brown Out Disabled)
+#pragma config LPCFG = OFF              // Low power regulator control (No Retention Sleep)
+#pragma config DNVPEN = ENABLE          // Downside Voltage Protection Enable bit (Downside protection enabled using ZPBOR when BOR is inactive)
 
 // FICD
-#pragma config ICS = PGD1    // ICD Communication Channel Select bits->Communicate on PGEC1 and PGED1
-#pragma config JTAGEN = OFF    // JTAG Enable bit->JTAG is disabled
-#pragma config BTSWP = OFF    // BOOTSWP Disable->BOOTSWP instruction disabled
+#pragma config ICS = PGD1               // ICD Communication Channel Select bits (Communicate on PGEC1 and PGED1)
+#pragma config JTAGEN = OFF             // JTAG Enable bit (JTAG is disabled)
+#pragma config BTSWP = OFF              // BOOTSWP Disable (BOOTSWP instruction disabled)
 
 // FDEVOPT1
-#pragma config ALTCMPI = DISABLE    // Alternate Comparator Input Enable bit->C1INC, C2INC, and C3INC are on their standard pin locations
-#pragma config TMPRPIN = OFF    // Tamper Pin Enable bit->TMPRN pin function is disabled
-#pragma config SOSCHP = ON    // SOSC High Power Enable bit (valid only when SOSCSEL = 1->Enable SOSC high power mode (default)
-#pragma config ALTVREF = ALTREFEN    // Alternate Voltage Reference Location Enable bit->VREF+ and CVREF+ on RA10, VREF- and CVREF- on RA9
+#pragma config ALTCMPI = DISABLE        // Alternate Comparator Input Enable bit (C1INC, C2INC, and C3INC are on their standard pin locations)
+#pragma config TMPRPIN = OFF            // Tamper Pin Enable bit (TMPRN pin function is disabled)
+#pragma config SOSCHP = OFF             // SOSC High Power Enable bit (valid only when SOSCSEL = 1 (Enable SOSC low power mode)
+#pragma config ALTVREF = ALTREFEN       // Alternate Voltage Reference Location Enable bit (VREF+ and CVREF+ on RA10, VREF- and CVREF- on RA9)
 
-// FBOOT
-#pragma config BTMODE = SINGLE    // Boot Mode Configuration bits->Device is in Single Boot (legacy) mode
+// #pragma config statements should precede project file includes.
+// Use project enums instead of #define for ON and OFF.
 
 #define FOSC        (16000000ULL)
 #define FCY         (FOSC/2)
@@ -69,40 +74,82 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-uint8_t cont, data, slv_addr;
-bool snd = false;
+typedef enum i2c_estado_e {
+    ENVIA_START,
+    EVNIA_ENDERECO,
+    ENVIA_DATA,
+    ENVIA_STOP
+} i2c_state_t;
+
+typedef enum i2c_comandos_e {
+    LER_ACK,
+    ESCREVE,
+    LER
+} i2c_comando_t;
+
+#define EEPROM_ADDR			0xA0
+
+i2c_state_t i2c1_estado;
+i2c_comando_t i2c1_comando;
+uint8_t slv_data, slv_addr;
+bool snd = false, slv_ack;
 
 void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
     IFS1bits.MI2C1IF = 0;
-    
+
     if (I2C1STATbits.IWCOL) {
         I2C1STATbits.IWCOL = 0;
-        cont = 0;
-        
+        i2c1_estado = ENVIA_START;
+
         return;
     }
 
-    switch (cont) {
-        case 0:
+    switch (i2c1_estado) {
+        case ENVIA_START:
             if (snd) {
                 I2C1CONLbits.SEN = 1;
-                cont = 1;
+
+                switch (i2c1_comando) {
+                    case LER_ACK:
+                        i2c1_estado = EVNIA_ENDERECO;
+                        break;
+                }
+            }
+
+            break;
+        
+        case EVNIA_ENDERECO:
+            I2C1TRN = slv_addr;
+            
+            switch (i2c1_comando) {
+                case LER_ACK:
+                    i2c1_estado = ENVIA_STOP;
+                    break;
             }
             
             break;
-        case 1:
-            I2C1TRN = slv_addr;
-            cont = 2;
+            
+        case ENVIA_DATA:
+            I2C1TRN = slv_data;
+            i2c1_estado = ENVIA_STOP;
             break;
-        case 2:
-            I2C1TRN = data;
-            cont = 3;
-            break;
+        
         default:
-        case 3:
+        case ENVIA_STOP:
+            
+            switch (i2c1_comando) {
+                case LER_ACK:
+                    if (I2C1STATbits.ACKSTAT) { //nao houve ack
+                        slv_ack = false;
+                        I2C1STATbits.ACKSTAT = 0;
+                    } else {
+                        slv_ack = true;
+                    }
+            }
+            
             I2C1CONLbits.PEN = 1;
-            cont = 0;
+            i2c1_estado = ENVIA_START;
             snd = false;
             break;
     }
@@ -111,7 +158,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 void I2C1_Initialize(void) {
 
     // initialize the hardware
-    I2C1BRG = 0x0026;
+    I2C1BRG = BRGVAL;
     // ACKEN disabled; STRICT disabled; STREN disabled; GCEN disabled; SMEN disabled; DISSLW disabled; I2CSIDL disabled; ACKDT Sends ACK; SCLREL Holds; RSEN disabled; A10M 7 Bit; PEN disabled; RCEN disabled; SEN disabled; I2CEN enabled; 
     I2C1CONL = 0x8200;
     // BCL disabled; D_nA disabled; R_nW disabled; P disabled; S disabled; I2COV disabled; IWCOL disabled; 
@@ -124,59 +171,32 @@ void I2C1_Initialize(void) {
     IEC1bits.MI2C1IE = 1;
 }
 
-void OSCILLATOR_Initialize(void)
-{
-    // CF no clock failure; NOSC PRI; SOSCEN disabled; POSCEN disabled; CLKLOCK unlocked; OSWEN Switch is Complete; IOLOCK not-active; 
-    __builtin_write_OSCCONL((uint8_t) (0x0200 & 0x00FF));
-    // CPDIV 1:1; PLLEN disabled; DOZE 1:8; RCDIV PRI; DOZEN disabled; ROI disabled; 
-    CLKDIV = 0x3200;
-    // STOR disabled; STORPOL Interrupt when STOR is 1; STSIDL disabled; STLPOL Interrupt when STLOCK is 1; STLOCK disabled; STSRC SOSC; STEN disabled; TUN Center frequency; 
-    OSCTUN = 0x0000;
-    // ROEN disabled; ROSEL FOSC; ROSIDL disabled; ROSWEN disabled; ROOUT disabled; ROSLP disabled; 
-    REFOCONL = 0x0000;
-    // RODIV 0; 
-    REFOCONH = 0x0000;
-    // ROTRIM 0; 
-    REFOTRIML = 0x0000;
-    // DCOTUN 0; 
-    DCOTUN = 0x0000;
-    // DCOFSEL 8; DCOEN disabled; 
-    DCOCON = 0x0700;
-    // DIV 0; 
-    OSCDIV = 0x0000;
-    // TRIM 0; 
-    OSCFDIV = 0x0000;
-    // WDTO disabled; TRAPR disabled; SLEEP disabled; BOR disabled; CM disabled; SWR disabled; SWDTEN disabled; EXTR disabled; POR disabled; SBOREN disabled; IDLE disabled; IOPUWR disabled; VREGS disabled; 
-    RCON = 0x0000;
+void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t data) {
+    i2c1_comando = cmd;
+    slv_data = data;
+    slv_addr = addr;
+    snd = true;
+    IFS1bits.MI2C1IF = 1;
+}
+
+bool I2C1_get_ack(uint8_t addr) {
+    I2C1_send(LER_ACK, addr, 0);
+    return slv_ack;
 }
 
 int main(void) {
-    
-    LATD = 0x0000;
-    TRISD = 0x0FFF;
-    IOCPDD = 0x0000;
-    IOCPUD = 0x0000;
-    ODCD = 0x0000;
-    ANSD = 0x00C0;
+    uint8_t wo;
 
-    IPC4bits.MI2C1IP = 1;
-    IPC4bits.SI2C1IP = 1;
-    
-    OSCILLATOR_Initialize();
     I2C1_Initialize();
+    wo = 0;
     __delay_ms(500);
 
-//    while (1) {        
-        cont = 0;
-        data = 0x10;
-        slv_addr = 0x20;
-        snd = true;
-        IFS1bits.MI2C1IF = 1;
-        __delay_ms(3000);
-//    }
-        
-        while (1)
-        {}
+    while (1) {
+        I2C1_get_ack(EEPROM_ADDR);
+        __delay_ms(1000);
+        I2C1_get_ack(EEPROM_ADDR + 4);
+        __delay_ms(1000);
+    }
 
     return 0;
 }
