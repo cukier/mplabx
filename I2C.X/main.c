@@ -152,7 +152,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 if (i2c1.tx_send < i2c1.tx_size) {
                     I2C1TRN = i2c1.tx_buffer[i2c1.tx_send];
                     i2c1.tx_send++;
-                    
+
                     if (i2c1.tx_send >= i2c1.tx_size) {
                         i2c1.estado = ENVIA_STOP;
                         i2c1.tx_send = 0;
@@ -213,7 +213,6 @@ bool I2C1_get_ack(uint8_t addr) {
 
 bool I2C1_send_data(uint8_t addr, uint8_t *data, uint16_t length) {
     I2C1_send(ESCREVE, addr, data, length);
-    
     return i2c1.slv_ack;
 }
 
@@ -222,10 +221,10 @@ int main(void) {
 
     I2C1_Initialize();
     __delay_ms(500);
-    I2C1_send_data(EEPROM_ADDR, data, sizeof(data));
+    I2C1_send_data(EEPROM_ADDR, data, sizeof (data));
 
     while (1) {
-        
+
     }
 
     return 0;
