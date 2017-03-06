@@ -58,7 +58,7 @@
 uint16_t buff_index, buff_rec;
 uint8_t buffer[BUFFER_SIZE];
 
-void __attribute__ ((interrupt,no_auto_psv)) _U1RXInterrupt(void) {
+void __attribute__ ((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
     buffer[buff_index++] = U1RXREG;
     
     if (buff_index >= BUFFER_SIZE)
@@ -70,7 +70,7 @@ void __attribute__ ((interrupt,no_auto_psv)) _U1RXInterrupt(void) {
     PR1 = UINT16_MAX; //periodo timer 1
 }
 
-void __attribute__((__interrupt__, __auto_psv__)) _T1Interrupt(void) {
+void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     T1CONbits.TON = 0; //desliga timer    
     _T1IF = 0; //deliga flag interrupcao
     buff_rec = buff_index;
@@ -116,6 +116,8 @@ void uart_init(void) {
     tmr1_init();
     
     U1MODEbits.UARTEN = 1;
+    
+    return;
 }
 
 int main(void) {

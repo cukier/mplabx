@@ -45,13 +45,14 @@
 
 
 int main(void) {
-    TRISE = 0;
+    TRISEbits.TRISE5 = 0;
+    ODCEbits.ODCE5 = 1;
     
     while (1) {        
-        LATE = 0;
-        __delay_ms(10);
-        LATE = 32;
-        __delay_ms(5);
+        LATEbits.LATE5 = 1;
+        __delay_ms(10);  
+        LATEbits.LATE5 = 0;
+        __delay_ms(30); 
     }
     
     return 0;
