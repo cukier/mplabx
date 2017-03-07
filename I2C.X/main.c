@@ -67,6 +67,8 @@
 #define BAUDRATE    (9600)
 #define BRGVAL      (((FCY/BAUDRATE)/16)-1)
 #define DOUBLE_WORD_ADDRESS
+//#define TESTA_ENVIO
+#define TESTA_RECEBIMENTO
 
 #include <xc.h>
 #include <libpic30.h>
@@ -81,7 +83,8 @@ typedef enum i2c_estado_e {
     ENVIA_ENDERECO_MEM,
     ENVIA_DATA,
     ENVIA_STOP,
-    ENVIA_STOP_REPETIDO
+    ENVIA_START_REPETIDO,
+    MESTRE_RECEBE,
 } i2c_state_t;
 
 typedef enum i2c_comandos_e {
@@ -103,7 +106,7 @@ typedef struct i2c_str {
     uint8_t mem_addr;
 #endif    
     uint16_t buffer_size;
-    uint16_t tx_send;
+    uint16_t count;
     bool snd;
     bool slv_ack;
     bool done;
@@ -154,15 +157,15 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                     i2c1.estado = ENVIA_STOP;
                     break;
 
-                case ESCREVE:
-                    i2c1.estado = ENVIA_ENDERECO_MEM;
-#ifdef DOUBLE_WORD_ADDRESS
-                    i2c1.mem_h_send = true;
-#endif
-                    break;
-
                 case LER:
-                    i2c1.estado = ENVIA_STOP_REPETIDO;
+                case ESCREVE:
+                    if (i2c1.slv_addr & 1) {
+                        i2c1.estado = MESTRE_RECEBE;
+                        i2c1.count = 0;
+                    } else {
+                        i2c1.estado = ENVIA_ENDERECO_MEM;
+                    }
+
 #ifdef DOUBLE_WORD_ADDRESS
                     i2c1.mem_h_send = true;
 #endif
@@ -187,10 +190,12 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                     I2C1TRN = i2c1.mem_addr & 0xFF;
 
                     switch (i2c1.comando) {
-                        case LER:
                         case ESCREVE:
                             i2c1.estado = ENVIA_DATA;
-                            i2c1.tx_send = 0;
+                            i2c1.count = 0;
+                            break;
+                        case LER:
+                            i2c1.estado = ENVIA_START_REPETIDO;
                             break;
                         case IDDLE:
                         case LER_ACK:
@@ -204,7 +209,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 switch (i2c1.comando) {
                     case ESCREVE:
                         i2c1.estado = ENVIA_DATA;
-                        i2c1.tx_send = 0;
+                        i2c1.count = 0;
                         break;
                 }
 #endif
@@ -216,17 +221,17 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
             if (I2C1STATbits.ACKSTAT) {
                 i2c1.estado = ENVIA_STOP;
             } else {
-                if (i2c1.tx_send < i2c1.buffer_size) {
-                    I2C1TRN = i2c1.buffer[i2c1.tx_send];
-                    i2c1.tx_send++;
+                if (i2c1.count < i2c1.buffer_size) {
+                    I2C1TRN = i2c1.buffer[i2c1.count];
+                    i2c1.count++;
 
-                    if (i2c1.tx_send >= i2c1.buffer_size) {
+                    if (i2c1.count >= i2c1.buffer_size) {
                         i2c1.estado = ENVIA_STOP;
-                        i2c1.tx_send = 0;
+                        i2c1.count = 0;
                     }
                 } else {
                     i2c1.estado = ENVIA_STOP;
-                    i2c1.tx_send = 0;
+                    i2c1.count = 0;
                 }
             }
 
@@ -250,13 +255,30 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 #endif
             break;
 
-        case ENVIA_STOP_REPETIDO:
+        case ENVIA_START_REPETIDO:
             if (I2C1STATbits.ACKSTAT) { //nao houve ack
                 i2c1.estado = ENVIA_STOP;
             } else {
                 I2C1CONLbits.RCEN = 1;
-                i2c1.estado = ENVIA_STOP;
+                i2c1.slv_addr++;
+                i2c1.estado = EVNIA_ENDERECO_SLV;               
             }
+
+            break;
+
+        case MESTRE_RECEBE:
+            i2c1.buffer[i2c1.count] = I2C1RCV;
+
+            if (i2c1.count < (i2c1.buffer_size - 1)) {
+                I2C1CONLbits.ACKDT = 0;
+            } else {
+                I2C1CONLbits.ACKDT = 1;
+            }
+
+            i2c1.count++;
+
+            if (i2c1.count == i2c1.buffer_size)
+                i2c1.estado = ENVIA_STOP;
 
             break;
     }
@@ -272,7 +294,7 @@ void I2C1_Initialize(void) {
     i2c1.slv_addr = 0;
     i2c1.snd = false;
     i2c1.buffer = NULL;
-    i2c1.tx_send = 0;
+    i2c1.count = 0;
     i2c1.buffer_size = 0;
 
     // initialize the hardware
@@ -295,7 +317,7 @@ void I2C1_send(void) {
     i2c1.done = false;
 }
 
-bool I2C1_get_ack(uint8_t addr) {    
+bool I2C1_get_ack(uint8_t addr) {
     i2c1.comando = LER_ACK;
     i2c1.slv_addr = addr;
     i2c1.mem_addr = 0;
@@ -353,14 +375,23 @@ bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
 }
 
 int main(void) {
+#ifdef TESTA_ENVIO
     uint8_t data[3] = {1, 2, 3};
-//    uint8_t rdata[3] = {0, 0, 0};
+#endif
+#ifdef TESTA_RECEBIMENTO
+    uint8_t rdata[3] = {0, 0, 0};
+#endif
 
     I2C1_Initialize();
     __delay_ms(500);
-    if (I2C1_get_ack(EEPROM_ADDR))
+    if (I2C1_get_ack(EEPROM_ADDR)) {
+#ifdef TESTA_ENVIO
         I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
-//    I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
+#endif
+#ifdef TESTA_RECEBIMENTO
+        I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
+#endif
+    }
 
     while (1) {
 
