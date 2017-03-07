@@ -80,7 +80,8 @@ typedef enum i2c_estado_e {
     EVNIA_ENDERECO_SLV,
     ENVIA_ENDERECO_MEM,
     ENVIA_DATA,
-    ENVIA_STOP
+    ENVIA_STOP,
+    ENVIA_STOP_REPETIDO
 } i2c_state_t;
 
 typedef enum i2c_comandos_e {
@@ -93,8 +94,7 @@ typedef enum i2c_comandos_e {
 typedef struct i2c_str {
     i2c_state_t estado;
     i2c_comando_t comando;
-    uint8_t *rx_buffer;
-    uint8_t *tx_buffer;
+    uint8_t *buffer;
     uint8_t slv_addr;
 #ifdef DOUBLE_WORD_ADDRESS
     uint16_t mem_addr;
@@ -102,8 +102,7 @@ typedef struct i2c_str {
 #else
     uint8_t mem_addr;
 #endif    
-    uint16_t rx_size;
-    uint16_t tx_size;
+    uint16_t buffer_size;
     uint16_t tx_send;
     bool snd;
     bool slv_ack;
@@ -121,7 +120,8 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
         I2C1STATbits.IWCOL = 0;
         i2c1.estado = ENVIA_START;
         i2c1.snd = false;
-        i2c1.done = true;        
+        i2c1.done = true;
+        i2c1.mem_h_send = true;
         return;
     }
 
@@ -134,7 +134,12 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 switch (i2c1.comando) {
                     case ESCREVE:
                     case LER_ACK:
+                    case LER:
                         i2c1.estado = EVNIA_ENDERECO_SLV;
+                        break;
+
+                    case IDDLE:
+                        i2c1.estado = ENVIA_STOP;
                         break;
                 }
             }
@@ -148,11 +153,23 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 case LER_ACK:
                     i2c1.estado = ENVIA_STOP;
                     break;
+
                 case ESCREVE:
                     i2c1.estado = ENVIA_ENDERECO_MEM;
 #ifdef DOUBLE_WORD_ADDRESS
                     i2c1.mem_h_send = true;
 #endif
+                    break;
+
+                case LER:
+                    i2c1.estado = ENVIA_STOP_REPETIDO;
+#ifdef DOUBLE_WORD_ADDRESS
+                    i2c1.mem_h_send = true;
+#endif
+                    break;
+
+                case IDDLE:
+                    i2c1.estado = ENVIA_STOP;
                     break;
             }
 
@@ -170,9 +187,14 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                     I2C1TRN = i2c1.mem_addr & 0xFF;
 
                     switch (i2c1.comando) {
+                        case LER:
                         case ESCREVE:
                             i2c1.estado = ENVIA_DATA;
                             i2c1.tx_send = 0;
+                            break;
+                        case IDDLE:
+                        case LER_ACK:
+                            i2c1.estado = ENVIA_STOP;
                             break;
                     }
                 }
@@ -194,11 +216,11 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
             if (I2C1STATbits.ACKSTAT) {
                 i2c1.estado = ENVIA_STOP;
             } else {
-                if (i2c1.tx_send < i2c1.tx_size) {
-                    I2C1TRN = i2c1.tx_buffer[i2c1.tx_send];
+                if (i2c1.tx_send < i2c1.buffer_size) {
+                    I2C1TRN = i2c1.buffer[i2c1.tx_send];
                     i2c1.tx_send++;
 
-                    if (i2c1.tx_send >= i2c1.tx_size) {
+                    if (i2c1.tx_send >= i2c1.buffer_size) {
                         i2c1.estado = ENVIA_STOP;
                         i2c1.tx_send = 0;
                     }
@@ -223,25 +245,35 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
             i2c1.estado = ENVIA_START;
             i2c1.snd = false;
             i2c1.done = true;
+#ifdef DOUBLE_WORD_ADDRESS
+            i2c1.mem_h_send = true;
+#endif
+            break;
+
+        case ENVIA_STOP_REPETIDO:
+            if (I2C1STATbits.ACKSTAT) { //nao houve ack
+                i2c1.estado = ENVIA_STOP;
+            } else {
+                I2C1CONLbits.RCEN = 1;
+                i2c1.estado = ENVIA_STOP;
+            }
+
             break;
     }
 }
 
 void I2C1_Initialize(void) {
-    
     i2c1.comando = IDDLE;
     i2c1.done = true;
     i2c1.estado = ENVIA_START;
     i2c1.mem_addr = 0;
     i2c1.mem_h_send = true;
-    i2c1.rx_buffer = NULL;
-    i2c1.rx_size = 0;
     i2c1.slv_ack = false;
     i2c1.slv_addr = 0;
     i2c1.snd = false;
-    i2c1.tx_buffer = NULL;
+    i2c1.buffer = NULL;
     i2c1.tx_send = 0;
-    i2c1.tx_size = 0;
+    i2c1.buffer_size = 0;
 
     // initialize the hardware
     I2C1BRG = BRGVAL;
@@ -259,8 +291,8 @@ void I2C1_Initialize(void) {
 
 void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t *data, uint16_t lenth) {
     i2c1.comando = cmd;
-    i2c1.tx_buffer = data;
-    i2c1.tx_size = lenth;
+    i2c1.buffer = data;
+    i2c1.buffer_size = lenth;
     i2c1.slv_addr = addr;
     i2c1.snd = true;
     IFS1bits.MI2C1IF = 1;
@@ -268,36 +300,62 @@ void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t *data, uint16_t lenth) {
 
 bool I2C1_get_ack(uint8_t addr) {
     I2C1_send(LER_ACK, addr, NULL, 1);
-    
+
     while (!i2c1.done)
         ;
-    
+
     __delay_us(100);
     return i2c1.slv_ack;
 }
 
 #ifdef DOUBLE_WORD_ADDRESS
+
 bool I2C1_send_data(uint8_t addr, uint16_t mem, uint8_t *data, uint16_t length) {
 #else
+
+bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
+#endif
+    i2c1.mem_addr = mem;   
+    I2C1_send(ESCREVE, addr, data, length);
+
+    while (!i2c1.done)
+        ;
+
+    __delay_us(100);
+    return i2c1.slv_ack;
+}
+
+#ifdef DOUBLE_WORD_ADDRESS
+
+bool I2C1_get_data(uint8_t addr, uint16_t mem, uint8_t *data, uint16_t length) {
+#else
+
 bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
 #endif
     i2c1.mem_addr = mem;
-    I2C1_send(ESCREVE, addr, data, length);
-        
+    I2C1_send(ESCREVE, addr, NULL, 0);
+    __delay_us(100);
+    
     while (!i2c1.done)
         ;
     
+    I2C1_send(LER, addr, data, length);
+
+    while (!i2c1.done)
+        ;
+
     __delay_us(100);
     return i2c1.slv_ack;
 }
 
 int main(void) {
-    uint8_t data[3] = {1, 2, 3};
+//    uint8_t data[3] = {1, 2, 3};
+    uint8_t rdata[3] = {0, 0, 0};
 
     I2C1_Initialize();
     __delay_ms(500);
-    if (I2C1_get_ack(EEPROM_ADDR))
-        I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
+    //    I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
+    I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
 
     while (1) {
 
