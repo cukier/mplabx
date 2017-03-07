@@ -84,6 +84,7 @@ typedef enum i2c_estado_e {
 } i2c_state_t;
 
 typedef enum i2c_comandos_e {
+    IDDLE,
     LER_ACK,
     ESCREVE,
     LER
@@ -257,7 +258,7 @@ bool I2C1_get_ack(uint8_t addr) {
     while (!i2c1.done)
         ;
     
-    __delay_us(10);
+    __delay_us(100);
     return i2c1.slv_ack;
 }
 
