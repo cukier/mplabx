@@ -228,6 +228,20 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 }
 
 void I2C1_Initialize(void) {
+    
+    i2c1.comando = IDDLE;
+    i2c1.done = true;
+    i2c1.estado = ENVIA_START;
+    i2c1.mem_addr = 0;
+    i2c1.mem_h_send = true;
+    i2c1.rx_buffer = NULL;
+    i2c1.rx_size = 0;
+    i2c1.slv_ack = false;
+    i2c1.slv_addr = 0;
+    i2c1.snd = false;
+    i2c1.tx_buffer = NULL;
+    i2c1.tx_send = 0;
+    i2c1.tx_size = 0;
 
     // initialize the hardware
     I2C1BRG = BRGVAL;
