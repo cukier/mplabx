@@ -264,7 +264,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
 void I2C1_Initialize(void) {
     i2c1.comando = IDDLE;
-    i2c1.done = true;
+    i2c1.done = false;
     i2c1.estado = ENVIA_START;
     i2c1.mem_addr = 0;
     i2c1.mem_h_send = true;
@@ -289,17 +289,19 @@ void I2C1_Initialize(void) {
     IEC1bits.MI2C1IE = 1;
 }
 
-void I2C1_send(i2c_comando_t cmd, uint8_t addr, uint8_t *data, uint16_t lenth) {
-    i2c1.comando = cmd;
-    i2c1.buffer = data;
-    i2c1.buffer_size = lenth;
-    i2c1.slv_addr = addr;
+void I2C1_send(void) {
     i2c1.snd = true;
     IFS1bits.MI2C1IF = 1;
+    i2c1.done = false;
 }
 
-bool I2C1_get_ack(uint8_t addr) {
-    I2C1_send(LER_ACK, addr, NULL, 1);
+bool I2C1_get_ack(uint8_t addr) {    
+    i2c1.comando = LER_ACK;
+    i2c1.slv_addr = addr;
+    i2c1.mem_addr = 0;
+    i2c1.buffer = NULL;
+    i2c1.buffer_size = 1;
+    I2C1_send();
 
     while (!i2c1.done)
         ;
@@ -314,9 +316,13 @@ bool I2C1_send_data(uint8_t addr, uint16_t mem, uint8_t *data, uint16_t length) 
 #else
 
 bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
-#endif
-    i2c1.mem_addr = mem;   
-    I2C1_send(ESCREVE, addr, data, length);
+#endif    
+    i2c1.comando = ESCREVE;
+    i2c1.slv_addr = addr;
+    i2c1.mem_addr = mem;
+    i2c1.buffer = data;
+    i2c1.buffer_size = length;
+    I2C1_send();
 
     while (!i2c1.done)
         ;
@@ -331,15 +337,13 @@ bool I2C1_get_data(uint8_t addr, uint16_t mem, uint8_t *data, uint16_t length) {
 #else
 
 bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
-#endif
+#endif    
+    i2c1.comando = LER;
+    i2c1.slv_addr = addr;
     i2c1.mem_addr = mem;
-    I2C1_send(ESCREVE, addr, NULL, 0);
-    __delay_us(100);
-    
-    while (!i2c1.done)
-        ;
-    
-    I2C1_send(LER, addr, data, length);
+    i2c1.buffer = data;
+    i2c1.buffer_size = length;
+    I2C1_send();
 
     while (!i2c1.done)
         ;
@@ -349,13 +353,14 @@ bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
 }
 
 int main(void) {
-//    uint8_t data[3] = {1, 2, 3};
-    uint8_t rdata[3] = {0, 0, 0};
+    uint8_t data[3] = {1, 2, 3};
+//    uint8_t rdata[3] = {0, 0, 0};
 
     I2C1_Initialize();
     __delay_ms(500);
-    //    I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
-    I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
+    if (I2C1_get_ack(EEPROM_ADDR))
+        I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
+//    I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
 
     while (1) {
 
