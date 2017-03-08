@@ -85,6 +85,8 @@ typedef enum i2c_estado_e {
     ENVIA_STOP,
     ENVIA_START_REPETIDO,
     MESTRE_RECEBE,
+    S_MASTER_ACK_ADDR,
+    S_MASTER_RCV_DATA
 } i2c_state_t;
 
 typedef enum i2c_comandos_e {
@@ -160,8 +162,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 case LER:
                 case ESCREVE:
                     if (i2c1.slv_addr & 1) {
-                        i2c1.estado = MESTRE_RECEBE;
-                        i2c1.count = 0;
+                        i2c1.estado = S_MASTER_ACK_ADDR;
                     } else {
                         i2c1.estado = ENVIA_ENDERECO_MEM;
                     }
@@ -259,9 +260,9 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
             if (I2C1STATbits.ACKSTAT) { //nao houve ack
                 i2c1.estado = ENVIA_STOP;
             } else {
-                I2C1CONLbits.RCEN = 1;
+                I2C1CONLbits.SEN = 1;
                 i2c1.slv_addr++;
-                i2c1.estado = EVNIA_ENDERECO_SLV;               
+                i2c1.estado = EVNIA_ENDERECO_SLV;
             }
 
             break;
@@ -271,15 +272,30 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
             if (i2c1.count < (i2c1.buffer_size - 1)) {
                 I2C1CONLbits.ACKDT = 0;
+                i2c1.estado = S_MASTER_RCV_DATA;
             } else {
                 I2C1CONLbits.ACKDT = 1;
+                i2c1.estado = ENVIA_STOP;
             }
 
+            I2C1CONLbits.ACKEN = 1;
             i2c1.count++;
+            break;
 
-            if (i2c1.count == i2c1.buffer_size)
+        case S_MASTER_ACK_ADDR:
+            if (I2C1STATbits.ACKSTAT) { //nao houve ack
                 i2c1.estado = ENVIA_STOP;
+            } else {
+                I2C1CONLbits.RCEN = 1;
+                i2c1.estado = MESTRE_RECEBE;
+                i2c1.count = 0;
+            }
 
+            break;
+            
+        case S_MASTER_RCV_DATA:
+            I2C1CONLbits.RCEN = 1;
+            i2c1.estado = MESTRE_RECEBE;
             break;
     }
 }
@@ -392,6 +408,8 @@ int main(void) {
         I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
 #endif
     }
+    
+    Nop();
 
     while (1) {
 
