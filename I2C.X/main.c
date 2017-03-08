@@ -332,7 +332,7 @@ void I2C1_Initialize(void) {
     i2c1.buffer_size = 0;
 
     // initialize the hardware
-    I2C1BRG = BRGVAL;
+    I2C1BRG = I2C_BRG;
     // ACKEN disabled; STRICT disabled; STREN disabled; GCEN disabled; SMEN disabled; DISSLW disabled; I2CSIDL disabled; ACKDT Sends ACK; SCLREL Holds; RSEN disabled; A10M 7 Bit; PEN disabled; RCEN disabled; SEN disabled; I2CEN enabled; 
     I2C1CONL = 0x8200;
     // BCL disabled; D_nA disabled; R_nW disabled; P disabled; S disabled; I2COV disabled; IWCOL disabled; 
