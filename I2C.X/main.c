@@ -66,7 +66,8 @@
 #define I2C_BRG     ((FCY/2/FSCK)-1)
 #define BAUDRATE    (9600)
 #define BRGVAL      (((FCY/BAUDRATE)/16)-1)
-#define DOUBLE_WORD_ADDRESS
+
+//#define DOUBLE_WORD_ADDRESS
 //#define TESTA_ENVIO
 #define TESTA_RECEBIMENTO
 
@@ -144,7 +145,9 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
         i2c1.estado = ENVIA_START;
         i2c1.snd = false;
         i2c1.done = true;
+#ifdef DOUBLE_WORD_ADDRESS
         i2c1.mem_h_send = true;
+#endif
         return;
     }
 
@@ -229,11 +232,19 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                 I2C1TRN = i2c1.mem_addr;
 
                 switch (i2c1.comando) {
-                    case ESCREVE:
-                        i2c1.estado = ENVIA_DATA;
-                        i2c1.count = 0;
-                        break;
-                }
+                        case ESCREVE:
+                            i2c1.estado = ENVIA_DATA;
+                            i2c1.count = 0;
+                            break;
+                        case LER:
+                            i2c1.estado = ENVIA_START_REPETIDO;
+                            break;
+                        default:
+                        case IDDLE:
+                        case LER_ACK:
+                            I2C1_envia_stop();
+                            break;
+                    }
 #endif
             }
 
@@ -310,7 +321,9 @@ void I2C1_Initialize(void) {
     i2c1.done = false;
     i2c1.estado = ENVIA_START;
     i2c1.mem_addr = 0;
+#ifdef DOUBLE_WORD_ADDRESS    
     i2c1.mem_h_send = true;
+#endif    
     i2c1.slv_ack = false;
     i2c1.slv_addr = 0;
     i2c1.snd = false;
@@ -379,7 +392,7 @@ bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
 bool I2C1_get_data(uint8_t addr, uint16_t mem, uint8_t *data, uint16_t length) {
 #else
 
-bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
+bool I2C1_get_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
 #endif    
     i2c1.comando = LER;
     i2c1.slv_addr = addr;
