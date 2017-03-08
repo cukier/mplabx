@@ -118,6 +118,24 @@ i2c_t i2c1;
 
 #define EEPROM_ADDR			0xA0
 
+void I2C1_envia_stop(void) {
+    if (I2C1STATbits.ACKSTAT) { //nao houve ack
+        i2c1.slv_ack = false;
+        I2C1STATbits.ACKSTAT = 0;
+    } else {
+        i2c1.slv_ack = true;
+    }
+
+    I2C1CONLbits.PEN = 1;
+    i2c1.estado = ENVIA_START;
+    i2c1.snd = false;
+    i2c1.done = true;
+#ifdef DOUBLE_WORD_ADDRESS
+    i2c1.mem_h_send = true;
+#endif
+    return;
+}
+
 void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
     IFS1bits.MI2C1IF = 0;
 
@@ -143,8 +161,9 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                         i2c1.estado = EVNIA_ENDERECO_SLV;
                         break;
 
+                    default:
                     case IDDLE:
-                        i2c1.estado = ENVIA_STOP;
+                        I2C1_envia_stop();
                         break;
                 }
             }
@@ -172,8 +191,9 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 #endif
                     break;
 
+                default:
                 case IDDLE:
-                    i2c1.estado = ENVIA_STOP;
+                    I2C1_envia_stop();
                     break;
             }
 
@@ -181,7 +201,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
         case ENVIA_ENDERECO_MEM:
             if (I2C1STATbits.ACKSTAT) {
-                i2c1.estado = ENVIA_STOP;
+                I2C1_envia_stop();
             } else {
 #ifdef DOUBLE_WORD_ADDRESS
                 if (i2c1.mem_h_send) {
@@ -198,9 +218,10 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
                         case LER:
                             i2c1.estado = ENVIA_START_REPETIDO;
                             break;
+                        default:
                         case IDDLE:
                         case LER_ACK:
-                            i2c1.estado = ENVIA_STOP;
+                            I2C1_envia_stop();
                             break;
                     }
                 }
@@ -220,19 +241,16 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
         case ENVIA_DATA:
             if (I2C1STATbits.ACKSTAT) {
-                i2c1.estado = ENVIA_STOP;
+                I2C1_envia_stop();
             } else {
                 if (i2c1.count < i2c1.buffer_size) {
                     I2C1TRN = i2c1.buffer[i2c1.count];
                     i2c1.count++;
 
                     if (i2c1.count >= i2c1.buffer_size) {
-                        i2c1.estado = ENVIA_STOP;
                         i2c1.count = 0;
+                        i2c1.estado = ENVIA_STOP;
                     }
-                } else {
-                    i2c1.estado = ENVIA_STOP;
-                    i2c1.count = 0;
                 }
             }
 
@@ -240,25 +258,12 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
         default:
         case ENVIA_STOP:
-            if (I2C1STATbits.ACKSTAT) { //nao houve ack
-                i2c1.slv_ack = false;
-                I2C1STATbits.ACKSTAT = 0;
-            } else {
-                i2c1.slv_ack = true;
-            }
-
-            I2C1CONLbits.PEN = 1;
-            i2c1.estado = ENVIA_START;
-            i2c1.snd = false;
-            i2c1.done = true;
-#ifdef DOUBLE_WORD_ADDRESS
-            i2c1.mem_h_send = true;
-#endif
+            I2C1_envia_stop();
             break;
 
         case ENVIA_START_REPETIDO:
             if (I2C1STATbits.ACKSTAT) { //nao houve ack
-                i2c1.estado = ENVIA_STOP;
+                I2C1_envia_stop();
             } else {
                 I2C1CONLbits.SEN = 1;
                 i2c1.slv_addr++;
@@ -284,7 +289,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
 
         case S_MASTER_ACK_ADDR:
             if (I2C1STATbits.ACKSTAT) { //nao houve ack
-                i2c1.estado = ENVIA_STOP;
+                I2C1_envia_stop();
             } else {
                 I2C1CONLbits.RCEN = 1;
                 i2c1.estado = MESTRE_RECEBE;
@@ -292,7 +297,7 @@ void __attribute__((interrupt, no_auto_psv)) _MI2C1Interrupt(void) {
             }
 
             break;
-            
+
         case S_MASTER_RCV_DATA:
             I2C1CONLbits.RCEN = 1;
             i2c1.estado = MESTRE_RECEBE;
@@ -395,7 +400,7 @@ int main(void) {
     uint8_t data[3] = {1, 2, 3};
 #endif
 #ifdef TESTA_RECEBIMENTO
-    uint8_t rdata[3] = {0, 0, 0};
+    uint8_t rdata[64] = {0};
 #endif
 
     I2C1_Initialize();
@@ -403,12 +408,13 @@ int main(void) {
     if (I2C1_get_ack(EEPROM_ADDR)) {
 #ifdef TESTA_ENVIO
         I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
+        __delay_ms(10);
 #endif
 #ifdef TESTA_RECEBIMENTO
         I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
 #endif
     }
-    
+
     Nop();
 
     while (1) {
