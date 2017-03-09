@@ -63,6 +63,7 @@
 
 #include "i2c.h"
 #include "ext_eeprom.h"
+#include "serial.h"
 #include <xc.h>
 #include <libpic30.h>
 #include <p24FJ1024GB606.h>
@@ -70,7 +71,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define TEST_SIZE   512
+#define TEST_SIZE   70
 #define TEST_ADDR   10
 
 int main(void) {
@@ -80,17 +81,23 @@ int main(void) {
     uint16_t cont;
 
     init_ext_eeprom();
+    uart_init();
     __delay_ms(500);
+    printf("\nHello\n");
 
     for (cont = 0; cont < TEST_SIZE; ++cont) {
         array_b[cont] = (uint8_t) cont;
     }
 
     read_ext_eeprom(0, array_a, TEST_SIZE);
-    write_ext_eeprom(TEST_ADDR, array_b, TEST_SIZE);
-    read_ext_eeprom(TEST_ADDR, array_c, TEST_SIZE);
+    write_ext_eeprom(0, array_b, TEST_SIZE);
+    read_ext_eeprom(0, array_c, TEST_SIZE);
     
-    Nop();
+    for (cont = 0; cont < TEST_SIZE; ++cont) {
+        printf("%03u %03u %03u %03u\n", cont, array_a[cont], array_b[cont], array_c[cont]);
+    }
+    
+    printf("\n");
     
     while(true) {
 //        ClrWdt();
