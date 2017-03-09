@@ -40,17 +40,15 @@ bool read_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
 
 bool write_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
     uint8_t read_buffer[EEPROM_PAGE_SIZE] = {0};
-    uint16_t cont, acum, end, block_addr, offset, i_bkp;
-    
-    i_bkp = i_size;
+    uint16_t cont, acum, end, block_addr, offset;
 
-    if ((!ext_eeprom_ready()) || ((address + i_bkp) > (uint16_t) EEPROM_SIZE)) //if ((!ext_eeprom_ready()) || ((address + i_size) > (uint16_t) EEPROM_SIZE))
+    if ((!ext_eeprom_ready()) || ((address + i_size) > (uint16_t) EEPROM_SIZE))
         return false;
 
-    if (i_bkp > EEPROM_PAGE_SIZE) //if (i_size > EEPROM_PAGE_SIZE)
+    if (i_size > EEPROM_PAGE_SIZE)
         end = EEPROM_PAGE_SIZE;
     else
-        end = i_bkp; //end = i_size;
+        end = i_size;
 
     acum = 0;
     block_addr = ((uint16_t) (address / EEPROM_PAGE_SIZE)) * EEPROM_PAGE_SIZE;
@@ -66,15 +64,15 @@ bool write_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
         I2C1_send_data(EEPROM_ADDR, block_addr, read_buffer, EEPROM_PAGE_SIZE);
         acum += end - offset;
 
-        if (i_bkp > (acum + EEPROM_PAGE_SIZE)) //if (i_size > (acum + EEPROM_PAGE_SIZE))
+        if (i_size > (acum + EEPROM_PAGE_SIZE))
             end = EEPROM_PAGE_SIZE;
         else
-            end = i_bkp - acum; //end = i_size - acum;
+            end = i_size - acum;
 
         block_addr += EEPROM_PAGE_SIZE;
         offset = 0;
         __delay_ms(10);
-    } while (acum < i_bkp); //} while (acum < i_size);
+    } while (acum < i_size);
 
     return true;
 }
