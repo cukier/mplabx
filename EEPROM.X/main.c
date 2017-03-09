@@ -61,10 +61,8 @@
 #define FCY         (FOSC/2)
 #define FSCK        (100000)
 
-#define EEPROM_ADDR			0xA0
-#define TESTA_RECEBIMENTO
-
 #include "i2c.h"
+#include "ext_eeprom.h"
 #include <xc.h>
 #include <libpic30.h>
 #include <p24FJ1024GB606.h>
@@ -72,31 +70,31 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define TEST_SIZE   512
+#define TEST_ADDR   10
+
 int main(void) {
-#ifdef TESTA_ENVIO
-    uint8_t data[3] = {1, 2, 3};
-#endif
-#ifdef TESTA_RECEBIMENTO
-    uint8_t rdata[64] = {0};
-#endif
+    uint8_t array_a[TEST_SIZE] = {0};
+    uint8_t array_b[TEST_SIZE] = {0};
+    uint8_t array_c[TEST_SIZE] = {0};
+    uint16_t cont;
 
-    I2C1_Initialize();
+    init_ext_eeprom();
     __delay_ms(500);
-    if (I2C1_get_ack(EEPROM_ADDR)) {
-#ifdef TESTA_ENVIO
-        I2C1_send_data(EEPROM_ADDR, 0x0010, data, sizeof (data));
-        __delay_ms(10);
-#endif
-#ifdef TESTA_RECEBIMENTO
-        I2C1_get_data(EEPROM_ADDR, 0x0010, rdata, sizeof (rdata));
-#endif
+
+    for (cont = 0; cont < TEST_SIZE; ++cont) {
+        array_b[cont] = (uint8_t) cont;
     }
 
+    read_ext_eeprom(0, array_a, TEST_SIZE);
+    write_ext_eeprom(TEST_ADDR, array_b, TEST_SIZE);
+    read_ext_eeprom(TEST_ADDR, array_c, TEST_SIZE);
+    
     Nop();
-
-    while (1) {
-
-    }
+    
+    while(true) {
+//        ClrWdt();
+    }        
 
     return 0;
 }
