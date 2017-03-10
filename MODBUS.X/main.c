@@ -61,46 +61,21 @@
 #define FCY         (FOSC/2)
 #define FSCK        (100000)
 
-#include "i2c.h"
-#include "ext_eeprom.h"
-#include "serial.h"
+#include "modbus.h"
 #include <xc.h>
 #include <libpic30.h>
 #include <p24FJ1024GB606.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-
-#define TEST_SIZE   4096
-#define TEST_ADDR   10
+#include <stdlib.h>
 
 int main(void) {
-    uint8_t array_a[TEST_SIZE] = {0};
-    uint8_t array_b[TEST_SIZE] = {0};
-    uint8_t array_c[TEST_SIZE] = {0};
-    uint16_t cont;
-
-    init_ext_eeprom();
-    uart_init();
-    __delay_ms(500);
-    printf("\nHello\n");
-
-    for (cont = 0; cont < TEST_SIZE; ++cont) {
-        array_b[cont] = (uint8_t) cont;
-    }
-
-    read_ext_eeprom(0, array_a, TEST_SIZE);
-    write_ext_eeprom(0, array_b, TEST_SIZE);
-    read_ext_eeprom(0, array_c, TEST_SIZE);
     
-    for (cont = 0; cont < TEST_SIZE; ++cont) {
-        printf("%03u %03u %03u %03u\n", cont, array_a[cont], array_b[cont], array_c[cont]);
-    }
-    
-    printf("\n");
+    modbus_init();    
     
     while(true) {
-//        ClrWdt();
+        slave_response();
     }        
 
     return 0;
