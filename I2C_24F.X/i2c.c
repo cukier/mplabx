@@ -6,9 +6,11 @@
  */
 
 #include "i2c.h"
+#include "sys.h"
 #include <libpic30.h>
 #include <stdio.h>
 
+#ifdef USE_I2C_1
 i2c_t i2c1;
 
 void I2C1_envia_stop(void) {
@@ -299,3 +301,4 @@ bool I2C1_get_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length) {
     __delay_us(100);
     return i2c1.slv_ack;
 }
+#endif

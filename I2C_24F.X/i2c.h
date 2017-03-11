@@ -1,16 +1,13 @@
 #ifndef I2C_H
 #define	I2C_H
 
-#ifndef FOSC
-#define FOSC        (16000000ULL)
+#include "sys.h"
+
+#ifdef FSCK_1
+#define I2C_BRG     ((FCY/2/FSCK_1)-1)
+#else
+#error Definir FSCK_1
 #endif
-#ifndef FCY
-#define FCY         (FOSC/2)
-#endif
-#ifndef FSCK
-#define FSCK        (100000)
-#endif
-#define I2C_BRG     ((FCY/2/FSCK)-1)
 
 #define DOUBLE_WORD_ADDRESS
 
@@ -59,6 +56,7 @@ extern "C" {
         bool done;
     } i2c_t;
 
+#ifdef USE_I2C_1
     void I2C1_Initialize(void);
     bool I2C1_get_ack(uint8_t addr);
 #ifdef DOUBLE_WORD_ADDRESS
@@ -68,6 +66,7 @@ extern "C" {
     bool I2C1_send_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length);
     bool I2C1_get_data(uint8_t addr, uint8_t mem, uint8_t *data, uint16_t length);
 #endif   
+#endif
 
 #ifdef	__cplusplus
 }
