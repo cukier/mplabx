@@ -9,6 +9,11 @@
 #define SLV_ADDR    1
 #endif
 
+
+#ifndef MODBUS_BUFFER_SIZE
+#define MODBUS_BUFFER_SIZE  (256)
+#endif
+
 #ifdef	__cplusplus
 extern "C" {
 #endif /* __cplusplus */

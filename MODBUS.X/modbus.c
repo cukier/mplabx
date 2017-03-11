@@ -10,9 +10,10 @@
 #include "ext_eeprom.h"
 #include <stdlib.h>
 
-#define MB_MAX_SIZE EEPROM_SIZE
+#define MODBUS_BUFFER_SIZE  SERIAL_BUFFER_SIZE
+#define MB_MAX_SIZE         EEPROM_SIZE
 
-uint8_t buffer_rda[256];
+uint8_t *buffer_rda;
 
 typedef enum modbus_command_exception_code {
     EXCEPTION_CODE_0,
@@ -182,7 +183,7 @@ bool slave_response(void) {
                         free(response);
                     }
                     break;
-                
+
                 case WRITE_MULTIPLE_REGISTERS_COMMAND:
                     if (((register_address * 2) + b_count) > (uint32_t) MB_MAX_SIZE) {
                         ret = return_error(my_address, WRITE_SINGLE_REGISTER_COMMAND,
@@ -219,6 +220,13 @@ bool slave_response(void) {
 }
 
 bool modbus_init(void) {
+
+    buffer_rda = NULL;
+    buffer_rda = (uint8_t *) malloc(MODBUS_BUFFER_SIZE * sizeof (uint8_t));
+
+    if (buffer_rda == NULL)
+        return false;
+
     init_ext_eeprom();
     uart_init(buffer_rda);
 
