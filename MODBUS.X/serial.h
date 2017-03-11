@@ -9,6 +9,10 @@
 
 #include "sys.h"
 
+#if !defined USE_UART_1 & !defined USE_UART_2
+#error Definir USE_UART_1 ou USE_UART_2
+#endif
+
 #ifdef USE_UART_1
 #ifdef BAUDRATE_1
 #define BRGVAL_1            (((FCY/BAUDRATE_1)/16)-1)

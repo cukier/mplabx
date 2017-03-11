@@ -5,7 +5,6 @@
  * Created on 10 de Março de 2017, 08:22
  */
 
-#include "sys.h"
 #include "modbus.h"
 #include "serial.h"
 #include "ext_eeprom.h"
@@ -109,21 +108,49 @@ bool slave_response(void) {
     uint8_t my_address, *response;
     uint8_t tmp_var[2];
     uint16_t register_value, register_address, b_count, cont, aux, aux_addr, index_rda;
-    bool ret;
+    bool ret, respond_now;
 
     ret = false;
+    respond_now = false;
 
-#ifdef USE_UART1_MODBUS
+#if defined USE_UART_1 & defined MODBUS_UART_1
     if (uart1_get_rec()) {
         uart1_set_rec();
         index_rda = uart1_get_index();
-#elif defined USE_UART2_MODBUS
+        respond_now = true;
+    }
+
+#ifdef USE_PIVO_STR
+    my_address = pivo->endereco;
+#else
+#ifdef SLV_ADDR_1
+    my_address = SLV_ADDR_1;
+#else
+    my_address = 1;
+#endif
+#endif
+#endif
+
+#if defined USE_UART_2 & defined MODBUS_UART_2
     if (uart2_get_rec()) {
         uart2_set_rec();
         index_rda = uart2_get_index();
+        respond_now = true;
+    }
+
+#ifdef USE_PIVO_STR
+    my_address = pivo->endereco;
 #else
-#error Definir USE_UART1_MODBUS ou USE_UART2_MODBUS
+#ifdef SLV_ADDR_2
+    my_address = SLV_ADDR_2;
+#else
+    my_address = 1;
+#endif    
 #endif
+#endif
+
+    if (respond_now) {
+        respond_now = false;
         register_value = (buffer_rda[MODBUS_FIELDS_REGISTER_VALUE_H] << 8) |
                 buffer_rda[MODBUS_FIELDS_REGISTER_VALUE_L];
         register_address = (buffer_rda[MODBUS_FIELDS_REGISTER_ADDRESS_H] << 8) |
@@ -131,11 +158,6 @@ bool slave_response(void) {
         b_count = buffer_rda[MODBUS_FIELDS_BYTE_COUNT];
         aux_addr = 2 * register_address;
         aux = ((buffer_rda[index_rda - 1] << 8) | (buffer_rda[index_rda - 2]));
-#ifdef USE_PIVO_STR
-        my_address = pivo->endereco;
-#else
-        my_address = SLV_ADDR;
-#endif
 
         if ((my_address == buffer_rda[MODBUS_FIELDS_ADDRESS])
                 && (CRC16(buffer_rda, index_rda - 2) == aux)) {
@@ -238,12 +260,11 @@ bool modbus_init(void) {
 
     init_ext_eeprom();
 
-#ifdef USE_UART1_MODBUS
+#ifdef MODBUS_UART_1
     uart1_init(buffer_rda);
-#elif defined USE_UART2_MODBUS
+#endif
+#ifdef MODBUS_UART_2    
     uart2_init(buffer_rda);
-#else
-#error Definir USE_UART1_MODBUS ou USE_UART2_MODBUS
 #endif
 
     if (!ext_eeprom_ready())

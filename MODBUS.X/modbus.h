@@ -1,12 +1,21 @@
 #ifndef MODBUS_H
 #define	MODBUS_H
 
+#include "sys.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <xc.h>
 
-#ifndef SLV_ADDR
-#define SLV_ADDR    1
+#if defined USE_UART_1 & !defined USE_UART_2 & defined MODBUS_UART_2
+#error Necessario definir MODBUS_UART_1
+#endif
+
+#if defined USE_UART_2 & !defined USE_UART_1 & defined MODBUS_UART_1
+#error Necessario definir MODBUS_UART_2
+#endif
+
+#if !defined MODBUS_UART_1 & !defined MODBUS_UART_2
+#error Definir MODBUS_UART_1 ou MODBUS_UART_2
 #endif
 
 #ifdef	__cplusplus
