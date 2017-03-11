@@ -57,10 +57,7 @@
 #pragma config SOSCHP = OFF             // SOSC High Power Enable bit (valid only when SOSCSEL = 1 (Enable SOSC low power mode)
 #pragma config ALTVREF = ALTREFEN       // Alternate Voltage Reference Location Enable bit (VREF+ and CVREF+ on RA10, VREF- and CVREF- on RA9)
 
-#define FOSC        (16000000ULL)
-#define FCY         (FOSC/2)
-#define FSCK        (100000)
-
+#include "sys.h"
 #include "i2c.h"
 #include "ext_eeprom.h"
 #include "serial.h"
@@ -75,13 +72,14 @@
 #define TEST_ADDR   10
 
 int main(void) {
+    uint8_t buff_uart[10] = { 0 };
     uint8_t array_a[TEST_SIZE] = {0};
     uint8_t array_b[TEST_SIZE] = {0};
     uint8_t array_c[TEST_SIZE] = {0};
     uint16_t cont;
 
     init_ext_eeprom();
-    uart_init();
+    uart2_init(buff_uart);
     __delay_ms(500);
     printf("\nHello\n");
 
