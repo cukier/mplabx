@@ -4,8 +4,8 @@
 #define USE_UART_1
 #define USE_UART_2
 #define USE_I2C_1
-//#define MODBUS_UART_1
-#define MODBUS_UART_2
+#define MODBUS_UART_1
+//#define MODBUS_UART_2
 
 #define FOSC                    (16000000ULL)
 #define SERIAL_BUFFER_SIZE      256

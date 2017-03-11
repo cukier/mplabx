@@ -13,7 +13,13 @@
 #define MODBUS_BUFFER_SIZE  SERIAL_BUFFER_SIZE
 #define MB_MAX_SIZE         EEPROM_SIZE
 
-uint8_t *buffer_rda;
+#ifdef MODBUS_UART_1
+uint8_t *buffer_rda1;
+#endif
+
+#ifdef MODBUS_UART_2
+uint8_t *buffer_rda2;
+#endif
 
 typedef enum modbus_command_exception_code {
     EXCEPTION_CODE_0,
@@ -105,8 +111,7 @@ bool return_error(uint8_t address, modbus_command_t command,
 bool slave_response(void) {
     //register_address ou Starting Address
     //register_value ou Quantity of Registers
-    uint8_t my_address, *response;
-    uint8_t tmp_var[2];
+    uint8_t my_address, *response, *buff_aux, tmp_var[2];
     uint16_t register_value, register_address, b_count, cont, aux, aux_addr, index_rda;
     bool ret, respond_now;
 
@@ -117,51 +122,53 @@ bool slave_response(void) {
     if (uart1_get_rec()) {
         uart1_set_rec();
         index_rda = uart1_get_index();
+        buff_aux = buffer_rda1;
         respond_now = true;
-    }
 
 #ifdef USE_PIVO_STR
-    my_address = pivo->endereco;
+        my_address = pivo->endereco;
 #else
 #ifdef SLV_ADDR_1
-    my_address = SLV_ADDR_1;
+        my_address = SLV_ADDR_1;
 #else
-    my_address = 1;
+        my_address = 1;
 #endif
 #endif
+    }
 #endif
 
 #if defined USE_UART_2 & defined MODBUS_UART_2
     if (uart2_get_rec()) {
         uart2_set_rec();
         index_rda = uart2_get_index();
+        buff_aux = buffer_rda2;
         respond_now = true;
-    }
 
 #ifdef USE_PIVO_STR
-    my_address = pivo->endereco;
+        my_address = pivo->endereco;
 #else
 #ifdef SLV_ADDR_2
-    my_address = SLV_ADDR_2;
+        my_address = SLV_ADDR_2;
 #else
-    my_address = 1;
+        my_address = 1;
 #endif    
 #endif
+    }
 #endif
 
     if (respond_now) {
         respond_now = false;
-        register_value = (buffer_rda[MODBUS_FIELDS_REGISTER_VALUE_H] << 8) |
-                buffer_rda[MODBUS_FIELDS_REGISTER_VALUE_L];
-        register_address = (buffer_rda[MODBUS_FIELDS_REGISTER_ADDRESS_H] << 8) |
-                buffer_rda[MODBUS_FIELDS_REGISTER_ADDRESS_L];
-        b_count = buffer_rda[MODBUS_FIELDS_BYTE_COUNT];
+        register_value = (buff_aux[MODBUS_FIELDS_REGISTER_VALUE_H] << 8) |
+                buff_aux[MODBUS_FIELDS_REGISTER_VALUE_L];
+        register_address = (buff_aux[MODBUS_FIELDS_REGISTER_ADDRESS_H] << 8) |
+                buff_aux[MODBUS_FIELDS_REGISTER_ADDRESS_L];
+        b_count = buff_aux[MODBUS_FIELDS_BYTE_COUNT];
         aux_addr = 2 * register_address;
-        aux = ((buffer_rda[index_rda - 1] << 8) | (buffer_rda[index_rda - 2]));
+        aux = ((buff_aux[index_rda - 1] << 8) | (buff_aux[index_rda - 2]));
 
-        if ((my_address == buffer_rda[MODBUS_FIELDS_ADDRESS])
-                && (CRC16(buffer_rda, index_rda - 2) == aux)) {
-            switch (buffer_rda[MODBUS_FIELDS_FUNCTION]) {
+        if ((my_address == buff_aux[MODBUS_FIELDS_ADDRESS])
+                && (CRC16(buff_aux, index_rda - 2) == aux)) {
+            switch (buff_aux[MODBUS_FIELDS_FUNCTION]) {
                 case READ_HOLDING_REGISTERS_COMMAND:
                     if (register_value == 0 || register_value > 0x7D) {
                         ret = return_error(my_address, READ_HOLDING_REGISTERS_COMMAND,
@@ -207,7 +214,7 @@ bool slave_response(void) {
                         response = (uint8_t *) malloc(index_rda * sizeof (uint8_t));
 
                         for (cont = 0; cont < index_rda; ++cont) {
-                            response[cont] = buffer_rda[cont];
+                            response[cont] = buff_aux[cont];
                         }
 
                         ret = send_modbus(response, index_rda);
@@ -229,7 +236,7 @@ bool slave_response(void) {
                             return false;
                         }
 
-                        write_ext_eeprom(aux_addr, &buffer_rda[7], b_count);
+                        write_ext_eeprom(aux_addr, &buff_aux[7], b_count);
                         response[0] = my_address;
                         response[1] = WRITE_MULTIPLE_REGISTERS_COMMAND;
                         response[2] = (uint8_t) ((register_address & 0xFF00) >> 8);
@@ -251,20 +258,25 @@ bool slave_response(void) {
 }
 
 bool modbus_init(void) {
-
-    buffer_rda = NULL;
-    buffer_rda = (uint8_t *) malloc(MODBUS_BUFFER_SIZE * sizeof (uint8_t));
-
-    if (buffer_rda == NULL)
-        return false;
-
     init_ext_eeprom();
 
 #ifdef MODBUS_UART_1
-    uart1_init(buffer_rda);
+    buffer_rda1 = NULL;
+    buffer_rda1 = (uint8_t *) malloc(MODBUS_BUFFER_SIZE * sizeof (uint8_t));
+
+    if (buffer_rda1 == NULL)
+        return false;
+
+    uart1_init(buffer_rda1);
 #endif
 #ifdef MODBUS_UART_2    
-    uart2_init(buffer_rda);
+    buffer_rda2 = NULL;
+    buffer_rda2 = (uint8_t *) malloc(MODBUS_BUFFER_SIZE * sizeof (uint8_t));
+
+    if (buffer_rda2 == NULL)
+        return false;
+
+    uart2_init(buffer_rda2);
 #endif
 
     if (!ext_eeprom_ready())
