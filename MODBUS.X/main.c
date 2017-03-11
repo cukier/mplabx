@@ -57,10 +57,7 @@
 #pragma config SOSCHP = OFF             // SOSC High Power Enable bit (valid only when SOSCSEL = 1 (Enable SOSC low power mode)
 #pragma config ALTVREF = ALTREFEN       // Alternate Voltage Reference Location Enable bit (VREF+ and CVREF+ on RA10, VREF- and CVREF- on RA9)
 
-#define FOSC        (16000000ULL)
-#define FCY         (FOSC/2)
-#define FSCK        (100000)
-
+#include "sys.h"
 #include "modbus.h"
 #include <xc.h>
 #include <libpic30.h>

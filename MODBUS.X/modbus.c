@@ -5,6 +5,7 @@
  * Created on 10 de Março de 2017, 08:22
  */
 
+#include "sys.h"
 #include "modbus.h"
 #include "serial.h"
 #include "ext_eeprom.h"
@@ -112,9 +113,17 @@ bool slave_response(void) {
 
     ret = false;
 
-    if (uart_get_rec()) {
-        uart_set_rec();
-        index_rda = uart_get_index();
+#ifdef USE_UART1_MODBUS
+    if (uart1_get_rec()) {
+        uart1_set_rec();
+        index_rda = uart1_get_index();
+#elif defined USE_UART2_MODBUS
+    if (uart2_get_rec()) {
+        uart2_set_rec();
+        index_rda = uart2_get_index();
+#else
+#error Definir USE_UART1_MODBUS ou USE_UART2_MODBUS
+#endif
         register_value = (buffer_rda[MODBUS_FIELDS_REGISTER_VALUE_H] << 8) |
                 buffer_rda[MODBUS_FIELDS_REGISTER_VALUE_L];
         register_address = (buffer_rda[MODBUS_FIELDS_REGISTER_ADDRESS_H] << 8) |
@@ -126,7 +135,7 @@ bool slave_response(void) {
         my_address = pivo->endereco;
 #else
         my_address = SLV_ADDR;
-#endif   
+#endif
 
         if ((my_address == buffer_rda[MODBUS_FIELDS_ADDRESS])
                 && (CRC16(buffer_rda, index_rda - 2) == aux)) {
@@ -228,7 +237,14 @@ bool modbus_init(void) {
         return false;
 
     init_ext_eeprom();
-    uart_init(buffer_rda);
+
+#ifdef USE_UART1_MODBUS
+    uart1_init(buffer_rda);
+#elif defined USE_UART2_MODBUS
+    uart2_init(buffer_rda);
+#else
+#error Definir USE_UART1_MODBUS ou USE_UART2_MODBUS
+#endif
 
     if (!ext_eeprom_ready())
         return false;

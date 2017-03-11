@@ -56,10 +56,10 @@ bool write_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
     offset = address - block_addr;
     read_buffer = NULL;
     read_buffer = (uint8_t *) malloc(EEPROM_PAGE_SIZE * sizeof(uint8_t));
-    
+
     if (read_buffer == NULL)
         return false;
-
+    
     do {
         I2C1_get_data(EEPROM_ADDR, block_addr, read_buffer, EEPROM_PAGE_SIZE);
 
