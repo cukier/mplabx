@@ -7,38 +7,31 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#ifndef SERIAL_BUFFER_SIZE
-#define SERIAL_BUFFER_SIZE  (512)
+#include "sys.h"
+
+#ifdef USE_UART_1
+#ifdef BAUDRATE_1
+#define BRGVAL_1            (((FCY/BAUDRATE_1)/16)-1)
+#else
+#error Definir BAUDRATE_1
 #endif
-#ifndef FOSC
-#define FOSC                (16000000ULL)
-#endif
-#ifndef FCY
-#define FCY                 (FOSC/2)
-#endif
-#ifndef BAUDRATE
-#define BAUDRATE            (9600)
-#endif
-#define BRGVAL              (((FCY/BAUDRATE)/16)-1)
-#ifndef U1_RX_RP
+#define U1_TX_RP            (RPOR6bits.RP12R)
 #define U1_RX_RP            (11)
 #endif
-#ifndef U1_TX_RP
-#define U1_TX_RP            (RPOR6bits.RP12R)
+
+#ifdef USE_UART_2
+#ifdef BAUDRATE_2
+#define BRGVAL_2            (((FCY/BAUDRATE_2)/16)-1)
+#else
+#error Definir BAUDRATE_2
 #endif
-#ifndef U2_RX_RP
-#define U2_RX_RP            (11)
-#endif
-#ifndef U2_TX_RP
-#define U2_TX_RP            (RPOR6bits.RP12R)
+#define U2_TX_RP            (RPOR11bits.RP23R)
+#define U2_RX_RP            (22)
 #endif
 
 #ifdef	__cplusplus
 extern "C" {
 #endif /* __cplusplus */   
-
-#define USE_UART_1
-//#define USE_UART_2
 
 #ifdef USE_UART_1
     void uart1_init(uint8_t *in_buffer);

@@ -40,32 +40,48 @@
 #pragma config SOSCHP = ON
 #pragma config ALTVREF = ALTREFEN
 
-#include <xc.h>
-#include <p24FJ1024GB606.h>
-#include <stdint.h>
 
-#define FOSC                    (16000000ULL)
-#define FCY                     (FOSC/2)
-#define BAUDRATE                (9600)
-#define BRGVAL                  (((FCY/BAUDRATE)/16)-1)
-#define SERIAL_BUFFER_SIZE      256
-
-#include "serial.h"
+#include "sys.h"
 #include <libpic30.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <xc.h>
+#include <p24FJ1024GB606.h>
+#include <stdint.h>
+#include "serial.h"
 
 int main(void) {  
     uint8_t buff[SERIAL_BUFFER_SIZE] = { 0 };
+    uint8_t buff2[SERIAL_BUFFER_SIZE] = { 0 };
+    uint16_t cont;
+    uint16_t cont2;
 
     uart1_init(buff);
+    uart2_init(buff2);
 
     while (1) {
-//        __C30_UART = 1;
-        printf("Hello\n");
-//        __C30_UART = 2;
-//        printf("Hello\n");
-        __delay_ms(500);
+        __C30_UART = 1;
+        if (uart1_get_rec()) {
+            uart1_set_rec();
+            cont = 0;
+            
+            while (cont < uart1_get_index())
+                putchar(buff[cont++]);
+            
+            printf("_1");
+        }
+        __C30_UART = 2;        
+        if (uart2_get_rec()) {
+            uart2_set_rec();
+            cont2 = 0;
+            
+            while (cont2 < uart2_get_index())
+                putchar(buff2[cont2++]);
+            
+            printf("_2");
+        }
+        
+        
     }
 
     return 0;
