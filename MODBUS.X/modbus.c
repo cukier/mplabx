@@ -9,6 +9,7 @@
 #include "serial.h"
 #include "ext_eeprom.h"
 #include <stdlib.h>
+#include <libpic30.h>
 
 #define MODBUS_BUFFER_SIZE  SERIAL_BUFFER_SIZE
 #define MB_MAX_SIZE         EEPROM_SIZE
@@ -118,40 +119,36 @@ bool slave_response(void) {
     ret = false;
     respond_now = false;
 
-#if defined USE_UART_1 & defined MODBUS_UART_1
+#ifdef MODBUS_UART_1
     if (uart1_get_rec()) {
         uart1_set_rec();
         index_rda = uart1_get_index();
         buff_aux = buffer_rda1;
         respond_now = true;
-
+        __C30_UART = 1;
 #ifdef USE_PIVO_STR
         my_address = pivo->endereco;
-#else
-#ifdef SLV_ADDR_1
+#elif defined SLV_ADDR_1
         my_address = SLV_ADDR_1;
 #else
         my_address = 1;
 #endif
-#endif
     }
 #endif
 
-#if defined USE_UART_2 & defined MODBUS_UART_2
+#ifdef MODBUS_UART_2
     if (uart2_get_rec()) {
         uart2_set_rec();
         index_rda = uart2_get_index();
         buff_aux = buffer_rda2;
         respond_now = true;
-
+        __C30_UART = 2;
 #ifdef USE_PIVO_STR
         my_address = pivo->endereco;
-#else
-#ifdef SLV_ADDR_2
+#elif defined SLV_ADDR_2
         my_address = SLV_ADDR_2;
 #else
         my_address = 1;
-#endif    
 #endif
     }
 #endif
