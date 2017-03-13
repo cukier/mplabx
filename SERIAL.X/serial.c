@@ -72,7 +72,7 @@ void uart1_init(uint8_t *in_buffer) {
     //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
     RPINR18bits.U1RXR = U1_RX_RP; // Assign U1RX To Pin RP11    
     U1_TX_RP = 3; // Assign U1TX To Pin RP12
-    __C30_UART = 1; // printf
+//    __C30_UART = 1; // printf
 
     tmr1_init();
 
@@ -153,7 +153,7 @@ void uart2_init(uint8_t *in_buffer) {
     //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
     RPINR19bits.U2RXR = U2_RX_RP; // Assign U2RX To Pin RP11  
     U2_TX_RP = 5; // Assign U2TX To Pin RP12
-    __C30_UART = 2; // printf
+//    __C30_UART = 2; // printf
 
     tmr2_init();
 

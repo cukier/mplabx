@@ -13,6 +13,7 @@ extern "C" {
 #endif /* __cplusplus */
 
     void init_ext_eeprom(void);
+    bool ext_eeprom_ready(void);
     bool read_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size);
     bool write_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size);
     
