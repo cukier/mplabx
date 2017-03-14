@@ -101,7 +101,7 @@ void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
     if (serial_buffer_index2 >= SERIAL_BUFFER_SIZE)
         serial_buffer_index2 = 0;
 
-    T2CONbits.TCKPS = 1; //1:8
+    T2CONbits.TCKPS = 2; //1:64
     IFS1bits.U2RXIF = 0; //limpa flag int rx         
     T2CONbits.TON = 1; //liga timer 2    
     PR2 = UINT16_MAX; //periodo timer 2
@@ -163,7 +163,11 @@ void uart2_init(uint8_t *in_buffer) {
 }
 
 uint16_t uart2_get_index(void) {
-    return serial_buff_rec2;
+    uint16_t ret = 0;
+    
+    ret = serial_buff_rec2;
+    serial_buff_rec2 = 0;
+    return ret;
 }
 
 bool uart2_get_rec(void) {

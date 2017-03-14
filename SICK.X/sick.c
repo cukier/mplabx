@@ -59,7 +59,7 @@ typedef enum dsf60_command_e {
 } DSF60_command_t;
 
 dsf60_t *dsf60;
-uint8_t *dsf60_buffer;
+uint8_t dsf60_buffer[SERIAL_BUFFER_SIZE];
 
 void DSF60_send_request(uint8_t *req, uint16_t size) {
     uint16_t cont;
@@ -81,10 +81,10 @@ void DSF60_send_request(uint8_t *req, uint16_t size) {
 bool DSF60_init_encoder(void) {
     TRISEbits.TRISE0 = 0;
 
-    dsf60_buffer = (uint8_t *) malloc(SERIAL_BUFFER_SIZE * sizeof(uint8_t));
-    
-    if (dsf60_buffer == NULL)
-            return false;
+    //    dsf60_buffer = (uint8_t *) malloc(SERIAL_BUFFER_SIZE * sizeof(uint8_t));
+    //    
+    //    if (dsf60_buffer == NULL)
+    //            return false;
 
 #ifdef ENCODER_USE_UART1
     uart1_init(dsf60_buffer);
@@ -97,7 +97,7 @@ bool DSF60_init_encoder(void) {
     dsf60 = (dsf60_t *) malloc(sizeof (dsf60_t));
 
     if (dsf60 == NULL) {
-        free(dsf60_buffer);
+        //        free(dsf60_buffer);
         return false;
     }
 
@@ -269,24 +269,29 @@ void DSF60_read_electrical_interface(void) {
 }
 
 void DSF60_disable_encoder(void) {
-    LATEbits.LATE0 = 1;
-
-    return;
-}
-
-void DSF60_enable_encoder(void) {
     LATEbits.LATE0 = 0;
 
     return;
 }
 
+void DSF60_enable_encoder(void) {
+    LATEbits.LATE0 = 1;
+
+    return;
+}
+
 bool DSF60_check(void) {
+    uint8_t cont;
+    
+    cont = 100;
     DSF60_disable_encoder();
-    __delay_ms(2000);
+    __delay_ms(3000);
     DSF60_enable_encoder();
-    __delay_ms(20);
-    DSF60_read_encoder_type();
-    __delay_ms(50);
+    __delay_ms(10);
+    while (cont--)
+        DSF60_read_encoder_type();
+    
+    __delay_ms(200);
 
 #ifdef ENCODER_USE_UART1    
     if (uart1_get_index() != 0) {
@@ -294,7 +299,7 @@ bool DSF60_check(void) {
     }
 #endif
 #ifdef ENCODER_USE_UART2
-    if (uart2_get_index() != 0) {
+    if (uart2_get_index() > 2) {
         return true;
     }
 #endif
@@ -500,6 +505,6 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 
 uint32_t DSF60_get_position(void) {
     DSF60_make_transaction(DSF60_COMMAND_READ_POSITION, 0);
-    
+
     return dsf60->position;
 }

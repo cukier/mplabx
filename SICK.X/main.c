@@ -26,12 +26,19 @@ int main(void) {
 
     DSF60_init_encoder();
     __delay_ms(100);
-    encoder_ok = DSF60_check();
-//    TRISEbits.TRISE5 = 0;
 
     while (true) {
-        pos = DSF60_get_position();
-//        LATEbits.LATE5 = ~LATEbits.LATE5;
+
+        if (!encoder_ok) {
+            encoder_ok = DSF60_check();
+            Nop();
+            Nop();
+        } else {
+            pos = DSF60_get_position();
+            Nop();
+            Nop();
+        }
+
         __delay_ms(1000);
     }
     return 0;

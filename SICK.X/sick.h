@@ -14,11 +14,12 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-   bool DSF60_init_encoder(void);
-   bool DSF60_check(void);
-   void DSF60_read_position(void);
-   uint32_t DSF60_get_position(void);
+    void DSF60_disable_encoder(void);
+    void DSF60_enable_encoder(void);
+    bool DSF60_init_encoder(void);
+    bool DSF60_check(void);
+    void DSF60_read_position(void);
+    uint32_t DSF60_get_position(void);
 
 #ifdef	__cplusplus
 }
