@@ -40,19 +40,21 @@ int main(void) {
 #endif    
     encoder_ok = DSF60_check();
     __delay_ms(1500);
-    
+
     if (encoder_ok) {
         res = 0;
         do {
             res = DSF60_get_resolution();
-            
-            if (res == 0)
-                __delay_ms(1000);
-        } while (res == 0);
 #ifdef DEBUG_UART1
             __C30_UART = 1;
             printf("Resolucao %lu\n", res);
+            printf("Part Number %s\n", DSF60_get_partNumber());
+            printf("Encoder Type %s\n", DSF60_get_encoderType());
+            printf("Date Code %s\n", DSF60_get_dateCode());
 #endif
+            if (res == 0 || res > 10000)
+                __delay_ms(1000);
+        } while (res == 0 || res > 10000);
     }
 
     while (true) {
@@ -69,9 +71,9 @@ int main(void) {
             Nop();
             Nop();
             pos = DSF60_get_position();
-//            Nop();
-//            Nop();
-//            res = DSF60_get_resolution();
+            //            Nop();
+            //            Nop();
+            //            res = DSF60_get_resolution();
             Nop();
             Nop();
 #ifdef DEBUG_UART1

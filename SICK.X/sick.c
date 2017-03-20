@@ -548,3 +548,15 @@ uint32_t DSF60_get_resolution(void) {
     
     return dsf60->resolution;
 }
+
+char *DSF60_get_partNumber(void) {
+    return dsf60->part_number;
+}
+
+char *DSF60_get_encoderType(void) {
+    return dsf60->encoder_type;
+}
+
+char *DSF60_get_dateCode(void) {
+    return dsf60->date_code;
+}

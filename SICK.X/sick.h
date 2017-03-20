@@ -21,6 +21,9 @@ extern "C" {
     bool DSF60_check(void);
     uint32_t DSF60_get_position(void);
     uint32_t DSF60_get_resolution(void);
+    char *DSF60_get_partNumber(void);
+    char *DSF60_get_encoderType(void);
+    char *DSF60_get_dateCode(void);    
 
 #ifdef	__cplusplus
 }

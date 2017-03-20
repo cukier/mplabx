@@ -1,7 +1,7 @@
 #ifndef SYS_H
 #define	SYS_H
 
-#define FOSC                    (32000000ULL)
+#define FOSC                    (16000000ULL)
 #define SERIAL1_BUFFER_SIZE     (256)
 #define SERIAL2_BUFFER_SIZE     (60)
 #define FCY                     (FOSC/2)

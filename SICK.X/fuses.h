@@ -2,7 +2,6 @@
 #ifndef FUSES_H
 #define	FUSES_H
 
-
 // PIC24FJ1024GB606 Configuration Bit Settings
 
 // 'C' source line config statements
@@ -23,12 +22,12 @@
 // FSIGN
 
 // FOSCSEL
-#pragma config FNOSC = FRCPLL           // Oscillator Source Selection (Fast RC Oscillator with divide-by-N with PLL module (FRCPLL) )
-#pragma config PLLMODE = PLL4X          // PLL Mode Selection (4x PLL selected)
+#pragma config FNOSC = PRI              // Oscillator Source Selection (Primary Oscillator (XT, HS, EC))
+#pragma config PLLMODE = DISABLED       // PLL Mode Selection (No PLL used; PLLEN bit is not available)
 #pragma config IESO = OFF               // Two-speed Oscillator Start-up Enable bit (Start up with user-selected oscillator source)
 
 // FOSC
-#pragma config POSCMD = NONE            // Primary Oscillator Mode Select bits (Primary Oscillator disabled)
+#pragma config POSCMD = HS              // Primary Oscillator Mode Select bits (HS Crystal Oscillator Mode)
 #pragma config OSCIOFCN = OFF           // OSC2 Pin Function bit (OSC2 is clock output)
 #pragma config SOSCSEL = ON             // SOSC Power Selection Configuration bits (SOSC is used in crystal (SOSCI/SOSCO) mode)
 #pragma config PLLSS = PLL_PRI          // PLL Secondary Selection Configuration bit (PLL is fed by the Primary oscillator)
