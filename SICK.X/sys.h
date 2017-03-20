@@ -3,7 +3,7 @@
 
 #define FOSC                    (32000000ULL)
 #define SERIAL1_BUFFER_SIZE     (256)
-#define SERIAL2_BUFFER_SIZE     (20)
+#define SERIAL2_BUFFER_SIZE     (60)
 #define FCY                     (FOSC/2)
 #define BAUDRATE_1              (9600)
 #define BAUDRATE_2              (115200)

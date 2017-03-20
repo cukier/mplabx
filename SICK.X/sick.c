@@ -542,3 +542,9 @@ uint32_t DSF60_get_position(void) {
 
     return dsf60->position;
 }
+
+uint32_t DSF60_get_resolution(void) {
+    DSF60_make_transaction(DSF60_COMMAND_READ_ENCODER_TYPE, 0);
+    
+    return dsf60->resolution;
+}

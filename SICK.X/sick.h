@@ -20,6 +20,7 @@ extern "C" {
     void DSF60_read_position(void);
     bool DSF60_check(void);
     uint32_t DSF60_get_position(void);
+    uint32_t DSF60_get_resolution(void);
 
 #ifdef	__cplusplus
 }

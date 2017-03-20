@@ -19,7 +19,8 @@
 
 int main(void) {
     bool encoder_ok;
-    uint32_t pos;
+    uint32_t pos, res;
+    float ang;
 #ifdef DEBUG_UART1
     uint8_t debug_buffer[SERIAL1_BUFFER_SIZE];
 #endif
@@ -38,6 +39,21 @@ int main(void) {
     printf("Begin\n");
 #endif    
     encoder_ok = DSF60_check();
+    __delay_ms(1500);
+    
+    if (encoder_ok) {
+        res = 0;
+        do {
+            res = DSF60_get_resolution();
+            
+            if (res == 0)
+                __delay_ms(1000);
+        } while (res == 0);
+#ifdef DEBUG_UART1
+            __C30_UART = 1;
+            printf("Resolucao %lu\n", res);
+#endif
+    }
 
     while (true) {
 
@@ -53,11 +69,15 @@ int main(void) {
             Nop();
             Nop();
             pos = DSF60_get_position();
+//            Nop();
+//            Nop();
+//            res = DSF60_get_resolution();
             Nop();
             Nop();
 #ifdef DEBUG_UART1
+            ang = ((float) pos) / ((float) res) * 360.0;
             __C30_UART = 1;
-            printf("Pos %lu\n", pos);
+            printf("Pos %05lu %f\n", pos, (double) ang);
 #endif
         }
 
