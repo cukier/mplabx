@@ -105,7 +105,7 @@ void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
     if (serial_buffer_index2 >= SERIAL2_BUFFER_SIZE)
         serial_buffer_index2 = 0;
 
-    T2CONbits.TCKPS = 2; //1:64
+    T2CONbits.TCKPS = 1; //1:8
     IFS1bits.U2RXIF = 0; //limpa flag int rx         
     PR2 = UINT16_MAX; //periodo timer 2
     T2CONbits.TON = 1; //liga timer 2    
