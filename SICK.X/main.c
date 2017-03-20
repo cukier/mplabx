@@ -50,6 +50,8 @@ int main(void) {
             printf("Encoder no ok\n");
 #endif
         } else {
+            Nop();
+            Nop();
             pos = DSF60_get_position();
             Nop();
             Nop();

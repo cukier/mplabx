@@ -483,6 +483,9 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 }
 
 bool DSF60_reset(void) {
+    //    uint8_t cont;
+
+    //    cont = 10;
 #ifdef ENCODER_USE_UART1
     uart1_get_index();
 #endif    
@@ -493,6 +496,7 @@ bool DSF60_reset(void) {
     __delay_ms(3000);
     DSF60_enable_encoder();
     __delay_ms(20);
+    //    while (--cont )
     DSF60_read_encoder_type();
     __delay_ms(50);
 
@@ -515,7 +519,7 @@ bool DSF60_check(void) {
 
     encoder_ok = false;
     tries = 10;
-    
+
     do {
         encoder_ok = DSF60_make_transaction(DSF60_COMMAND_READ_ENCODER_TYPE, 0);
 
@@ -523,7 +527,7 @@ bool DSF60_check(void) {
             __delay_ms(2000);
             encoder_ok = DSF60_reset();
             tries--;
-            
+
             if (!encoder_ok && !tries) {
                 return false;
             }

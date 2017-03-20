@@ -53,9 +53,13 @@ void uart1_init(uint8_t *in_buffer) {
     rec_ok1 = false;
 
     U1MODEbits.STSEL = 0; // 1 stop bit
-    U1MODEbits.PDSEL = 0; // 8-bit data, no parity
     U1MODEbits.ABAUD = 0; // Baud rate measurement is disabled or completed
     U1MODEbits.BRGH = 0; // Standard Speed mode
+#ifdef ENCODER_USE_UART1
+    U1MODEbits.PDSEL = 1; // 8-bit data, even parity
+#else
+    U1MODEbits.PDSEL = 0; // 8-bit data, no parity
+#endif
 
     U1BRG = BRGVAL_1; //Baudrate
 
@@ -103,8 +107,8 @@ void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
 
     T2CONbits.TCKPS = 2; //1:64
     IFS1bits.U2RXIF = 0; //limpa flag int rx         
-    T2CONbits.TON = 1; //liga timer 2    
     PR2 = UINT16_MAX; //periodo timer 2
+    T2CONbits.TON = 1; //liga timer 2    
     rec_ok2 = false;
 }
 
@@ -133,10 +137,14 @@ void uart2_init(uint8_t *in_buffer) {
     serial_buffer2 = in_buffer;
     rec_ok2 = false;
 
-    U2MODEbits.STSEL = 0; // 1 stop bit
-    U2MODEbits.PDSEL = 0; // 8-bit data, no parity
+    U2MODEbits.STSEL = 0; // 1 stop bit    
     U2MODEbits.ABAUD = 0; // Baud rate measurement is disabled or completed
     U2MODEbits.BRGH = 1; // High Speed mode
+#ifdef ENCODER_USE_UART2
+    U2MODEbits.PDSEL = 1; // 8-bit data, even parity
+#else
+    U2MODEbits.PDSEL = 0; // 8-bit data, no parity
+#endif
 
     U2BRG = BRGVAL_2; //Baudrate
 
