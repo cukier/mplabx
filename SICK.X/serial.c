@@ -18,7 +18,7 @@ bool rec_ok2;
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
     serial_buffer1[serial_buffer_index1++] = U1RXREG;
 
-    if (serial_buffer_index1 >= SERIAL_BUFFER_SIZE)
+    if (serial_buffer_index1 >= SERIAL1_BUFFER_SIZE)
         serial_buffer_index1 = 0;
 
     T1CONbits.TCKPS = 1; //1:8
@@ -98,7 +98,7 @@ void uart1_set_rec(void) {
 void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
     serial_buffer2[serial_buffer_index2++] = U2RXREG;
 
-    if (serial_buffer_index2 >= SERIAL_BUFFER_SIZE)
+    if (serial_buffer_index2 >= SERIAL2_BUFFER_SIZE)
         serial_buffer_index2 = 0;
 
     T2CONbits.TCKPS = 2; //1:64

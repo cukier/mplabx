@@ -59,7 +59,12 @@ typedef enum dsf60_command_e {
 } DSF60_command_t;
 
 dsf60_t *dsf60;
-uint8_t dsf60_buffer[SERIAL_BUFFER_SIZE];
+#ifdef ENCODER_USE_UART1
+uint8_t dsf60_buffer[SERIAL1_BUFFER_SIZE];
+#endif
+#ifdef ENCODER_USE_UART2
+uint8_t dsf60_buffer[SERIAL2_BUFFER_SIZE];
+#endif
 
 void DSF60_send_request(uint8_t *req, uint16_t size) {
     uint16_t cont;
@@ -280,32 +285,6 @@ void DSF60_enable_encoder(void) {
     return;
 }
 
-bool DSF60_check(void) {
-    uint8_t cont;
-    
-    cont = 100;
-    DSF60_disable_encoder();
-    __delay_ms(3000);
-    DSF60_enable_encoder();
-    __delay_ms(10);
-    while (cont--)
-        DSF60_read_encoder_type();
-    
-    __delay_ms(200);
-
-#ifdef ENCODER_USE_UART1    
-    if (uart1_get_index() != 0) {
-        return true;
-    }
-#endif
-#ifdef ENCODER_USE_UART2
-    if (uart2_get_index() > 2) {
-        return true;
-    }
-#endif
-    return false;
-}
-
 uint32_t make32(uint8_t hh, uint8_t hl, uint8_t lh, uint8_t ll) {
     uint32_t ret = 0;
 
@@ -499,6 +478,57 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 
             break;
     }
+
+    return true;
+}
+
+bool DSF60_reset(void) {
+#ifdef ENCODER_USE_UART1
+    uart1_get_index();
+#endif    
+#ifdef ENCODER_USE_UART2
+    uart2_get_index();
+#endif
+    DSF60_disable_encoder();
+    __delay_ms(3000);
+    DSF60_enable_encoder();
+    __delay_ms(20);
+    DSF60_read_encoder_type();
+    __delay_ms(50);
+
+#ifdef ENCODER_USE_UART1    
+    if (uart1_get_index() != 0) {
+        return true;
+    }
+#endif
+#ifdef ENCODER_USE_UART2
+    if (uart2_get_index() != 0) {
+        return true;
+    }
+#endif
+    return false;
+}
+
+bool DSF60_check(void) {
+    bool encoder_ok;
+    uint8_t tries;
+
+    encoder_ok = false;
+    tries = 10;
+    
+    do {
+        encoder_ok = DSF60_make_transaction(DSF60_COMMAND_READ_ENCODER_TYPE, 0);
+
+        if (!encoder_ok) {
+            __delay_ms(2000);
+            encoder_ok = DSF60_reset();
+            tries--;
+            
+            if (!encoder_ok && !tries) {
+                return false;
+            }
+        }
+    } while (!encoder_ok);
 
     return true;
 }
