@@ -1,14 +1,11 @@
 #ifndef SYS_H
 #define	SYS_H
 
-#define USE_UART_1
-#define USE_UART_2
-
 #define FOSC                    (16000000ULL)
 #define SERIAL_BUFFER_SIZE      256
 #define FCY                     (FOSC/2)
-#define BAUDRATE_1              (9600)
-#define BAUDRATE_2              (9600)
+#define BAUDRATE                (9600)
+#define BRGVAL                  (((FCY/BAUDRATE)/16)-1)
 
 #ifdef	__cplusplus
 extern "C" {
