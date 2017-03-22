@@ -52,7 +52,7 @@
 
 int main(void) {
 
-    uart_init(2);
+    uart_init(3);
 
     while (1) {
         printf("Hello\n");

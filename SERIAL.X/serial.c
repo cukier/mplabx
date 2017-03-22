@@ -28,6 +28,7 @@ void uart_init(uint8_t uartNr) {
             U3STAbits.UTXEN = 1;
             RPOR6bits.RP12R = 19;
             U3MODEbits.UARTEN = 1;
+            U3STAbits.OERR = 0;
             __C30_UART = 3;
             break;
         case 4:
