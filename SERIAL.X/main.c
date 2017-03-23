@@ -40,7 +40,6 @@
 #pragma config SOSCHP = ON
 #pragma config ALTVREF = ALTREFEN
 
-
 #include "sys.h"
 #include <libpic30.h>
 #include <stdio.h>
@@ -48,14 +47,23 @@
 #include <xc.h>
 #include <p24FJ1024GB606.h>
 #include <stdint.h>
-#include "serial.h"
+#include "uart1.h"
+#include "uart2.h"
+#include "uart3.h"
 
 int main(void) {
-
-    uart_init(3);
+    uint8_t data[3] = {1, 2, 3};
+    
+    uart1.init();
+    uart2.init();
+//    uart3.init();
+//    __C30_UART = 1;
 
     while (1) {
-        printf("Hello\n");
+//        printf("Hello\n");
+        uart2.send(data, 3);
+        uart1.send(data, 3);
+//        uart3.send(data, 3);
         __delay_ms(500);
     }
 
