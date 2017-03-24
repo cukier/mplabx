@@ -51,6 +51,11 @@ extern "C" {
     bool uart2_get_rec(void);
     void uart2_set_rec(void);
 #endif
+    
+#ifdef USE_UART_3
+    void initUart(void);
+    bool sendFrom(const uint8_t* startOfData, uint16_t bytesToSend);
+#endif
 
 #ifdef	__cplusplus
 }

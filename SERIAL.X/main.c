@@ -53,15 +53,19 @@
 int main(void) {
     uint8_t data1[SERIAL_BUFFER_SIZE] = {0};
     uint8_t data2[SERIAL_BUFFER_SIZE] = {0};
+    uint8_t data[3] = {1, 2, 3};
 
     uart1_init(data1);
     uart2_init(data2);
+
+    initUart();
 
     while (1) {
         __C30_UART = 1;
         printf("Hello\n");
         __C30_UART = 2;
         printf("Hello\n");
+        sendFrom(data, 3);
         __delay_ms(1000);
     }
 
