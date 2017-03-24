@@ -41,7 +41,7 @@
 #pragma config ALTVREF = ALTREFEN
 
 #include "sys.h"
-#include "uart.h"
+#include "serial.h"
 
 #include <libpic30.h>
 #include <stdio.h>
@@ -51,16 +51,17 @@
 #include <stdint.h>
 
 int main(void) {
-    uint8_t data[3] = {1, 2, 3};
+    uint8_t data1[SERIAL_BUFFER_SIZE] = {0};
+    uint8_t data2[SERIAL_BUFFER_SIZE] = {0};
 
-    initUart_1();
-    initUart_2();
-    initUart_3();
+    uart1_init(data1);
+    uart2_init(data2);
 
     while (1) {
-        sendFrom_1(data, 3);
-        sendFrom_2(data, 3);
-        sendFrom_3(data, 3);
+        __C30_UART = 1;
+        printf("Hello\n");
+        __C30_UART = 2;
+        printf("Hello\n");
         __delay_ms(1000);
     }
 
