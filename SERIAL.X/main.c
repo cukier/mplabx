@@ -41,30 +41,27 @@
 #pragma config ALTVREF = ALTREFEN
 
 #include "sys.h"
+#include "uart.h"
+
 #include <libpic30.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <xc.h>
 #include <p24FJ1024GB606.h>
 #include <stdint.h>
-#include "uart1.h"
-#include "uart2.h"
-#include "uart3.h"
 
 int main(void) {
     uint8_t data[3] = {1, 2, 3};
-    
-    uart1.init();
-    uart2.init();
-//    uart3.init();
-//    __C30_UART = 1;
+
+    initUart_1();
+    initUart_2();
+    initUart_3();
 
     while (1) {
-//        printf("Hello\n");
-        uart2.send(data, 3);
-        uart1.send(data, 3);
-//        uart3.send(data, 3);
-        __delay_ms(500);
+        sendFrom_1(data, 3);
+        sendFrom_2(data, 3);
+        sendFrom_3(data, 3);
+        __delay_ms(1000);
     }
 
     return 0;

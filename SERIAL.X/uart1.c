@@ -3,15 +3,15 @@
 #define RX_BUFFER_SIZE    0x0800
 #define TX_BUFFER_SIZE    0x0040
 
-static uint8_t TX_buffer[TX_BUFFER_SIZE] = {0};
-static volatile uint16_t TX_head = 0;
-static volatile uint16_t TX_next = 0;
+uint8_t TX_buffer_1[TX_BUFFER_SIZE] = {0};
+volatile uint16_t TX_head_1 = 0;
+volatile uint16_t TX_next_1 = 0;
 
-static uint8_t RX_buffer[RX_BUFFER_SIZE] = {0};
-static volatile uint16_t RX_head = 0;
-static volatile uint16_t RX_next = 0;
+uint8_t RX_buffer_1[RX_BUFFER_SIZE] = {0};
+volatile uint16_t RX_head_1 = 0;
+volatile uint16_t RX_next_1 = 0;
 
-static void initUart(void) {
+void initUart_1(void) {
     _U1RXIE = 0; // disable UART Rx interrupt
     _U1TXIE = 0; // disable UART Tx interrupt
 
@@ -61,72 +61,72 @@ static void initUart(void) {
     _U1RXIE = 1; // enable UART Rx interrupt
 }
 
-inline static uint16_t getTxSize(void) {
-    return TX_next - TX_head
-            + (TX_head > TX_next ? TX_BUFFER_SIZE : 0);
+uint16_t getTxSize_1(void) {
+    return TX_next_1 - TX_head_1
+            + (TX_head_1 > TX_next_1 ? TX_BUFFER_SIZE : 0);
 }
 
-inline static uint16_t getRxSize(void) {
-    return RX_next - RX_head
-            + (RX_head > RX_next ? RX_BUFFER_SIZE : 0);
+uint16_t getRxSize_1(void) {
+    return RX_next_1 - RX_head_1
+            + (RX_head_1 > RX_next_1 ? RX_BUFFER_SIZE : 0);
 }
 
-inline static uint16_t getTxSpace(void) {
-    return TX_head - TX_next - 1
-            + (TX_head <= TX_next ? TX_BUFFER_SIZE : 0);
+uint16_t getTxSpace_1(void) {
+    return TX_head_1 - TX_next_1 - 1
+            + (TX_head_1 <= TX_next_1 ? TX_BUFFER_SIZE : 0);
 }
 
 _ISR_ _U1RXInterrupt(void) {
 
     while (U1STAbits.URXDA) // while data is available
     {
-        RX_buffer[RX_next++] = U1RXREG; // copy byte to buffer
+        RX_buffer_1[RX_next_1++] = U1RXREG; // copy byte to buffer
 
-        RX_next %= RX_BUFFER_SIZE; // protect against rollover
+        RX_next_1 %= RX_BUFFER_SIZE; // protect against rollover
 
         /* accommodate overflow */
-        if (RX_head == RX_next)
-            RX_head = (RX_head + 1) % RX_BUFFER_SIZE;
+        if (RX_head_1 == RX_next_1)
+            RX_head_1 = (RX_head_1 + 1) % RX_BUFFER_SIZE;
     }
 
     _U1RXIF = OFF; // clear Rx interrupt flag
 }
 
-inline static void clearRx(void) {
-    RX_head = RX_next;
+void clearRx_1(void) {
+    RX_head_1 = RX_next_1;
 }
 
 _ISR_ _U1TXInterrupt(void) {
     _U1TXIF = OFF; // clear Tx interrupt flag
 
     /* transmit if transmit queue has room and buffer is not empty */
-    while (!(U1STAbits.UTXBF) && (TX_head != TX_next)) {
-        U1TXREG = TX_buffer[TX_head++];
-        TX_head %= TX_BUFFER_SIZE;
+    while (!(U1STAbits.UTXBF) && (TX_head_1 != TX_next_1)) {
+        U1TXREG = TX_buffer_1[TX_head_1++];
+        TX_head_1 %= TX_BUFFER_SIZE;
     }
 }
 
-static bool sendFrom(const uint8_t* startOfData, uint16_t bytesToSend) {
+bool sendFrom_1(const uint8_t* startOfData, uint16_t bytesToSend) {
     /* can't send nonexistent data or no data */
     if (!startOfData || !bytesToSend)
         return false;
 
     /* make sure room is available in buffer */
-    while (getTxSpace() < bytesToSend);
+    while (getTxSpace_1() < bytesToSend);
 
     /* pause background sending of data */
     _U1TXIE = 0; // disable UART Tx interrupt
 
     /* send bytes while bytes still need to be sent */
     while (bytesToSend--) {
-        TX_buffer[TX_next++] = *startOfData;
+        TX_buffer_1[TX_next_1++] = *startOfData;
 
         /* circular queue rollover protection */
-        TX_next %= TX_BUFFER_SIZE;
+        TX_next_1 %= TX_BUFFER_SIZE;
 
         /* accommodate overflow */
-        if (TX_head == TX_next)
-            TX_head = (TX_head + 1) % TX_BUFFER_SIZE;
+        if (TX_head_1 == TX_next_1)
+            TX_head_1 = (TX_head_1 + 1) % TX_BUFFER_SIZE;
 
         ++startOfData;
     }
@@ -140,27 +140,27 @@ static bool sendFrom(const uint8_t* startOfData, uint16_t bytesToSend) {
     return true;
 }
 
-inline static void startRx(void) {
-    clearRx(); // empty the Rx buffer
+void startRx_1(void) {
+    clearRx_1(); // empty the Rx buffer
     _U1RXIE = 1; // enable Rx interrupt
 }
 
-inline static void setBaudRate(uint64_t desiredBaudRate) {
+void setBaudRate_1(uint64_t desiredBaudRate) {
     U1BRG = ((FCY / desiredBaudRate) / 4) - 1; // calculate value for baud register
 }
 
-static int copyFrom(uint8_t* startOfStorage, int maxBytesToRead) {
+int copyFrom_1(uint8_t* startOfStorage, int maxBytesToRead) {
     if (!startOfStorage)
         return 0;
 
     _U1RXIE = 0; /* disable UART Rx interrupt */
 
-    int head = RX_head,
-            next = RX_next,
+    int head = RX_head_1,
+            next = RX_next_1,
             count = 0;
 
     while (maxBytesToRead-- && (head != next)) {
-        startOfStorage[count++] = RX_buffer[head++];
+        startOfStorage[count++] = RX_buffer_1[head++];
         head %= RX_BUFFER_SIZE;
     }
 
@@ -169,44 +169,33 @@ static int copyFrom(uint8_t* startOfStorage, int maxBytesToRead) {
     return count;
 }
 
-static int receiveFrom(uint8_t* startOfStorage, int maxBytesToRead) {
+int receiveFrom_1(uint8_t* startOfStorage, int maxBytesToRead) {
     if (!startOfStorage)
         return 0;
 
     int count = 0;
 
-    while (maxBytesToRead-- && (RX_head != RX_next)) {
-        startOfStorage[count++] = RX_buffer[RX_head++];
-        RX_head %= RX_BUFFER_SIZE;
+    while (maxBytesToRead-- && (RX_head_1 != RX_next_1)) {
+        startOfStorage[count++] = RX_buffer_1[RX_head_1++];
+        RX_head_1 %= RX_BUFFER_SIZE;
     }
 
     return count;
 }
 
-static void dropFrom(int bytesToDrop) {
+void dropFrom_1(int bytesToDrop) {
     if (bytesToDrop <= 0)
         return;
-    
+
     _U1RXIE = 0; /* disable UART Rx interrupt */
-    RX_head = (RX_head + bytesToDrop) % RX_BUFFER_SIZE;
-    
-    if (RX_head > RX_next)
-        RX_head = RX_next;
-    
+    RX_head_1 = (RX_head_1 + bytesToDrop) % RX_BUFFER_SIZE;
+
+    if (RX_head_1 > RX_next_1)
+        RX_head_1 = RX_next_1;
+
     _U1RXIE = 1; /* enable UART Rx interrupt */
 }
 
-static void flush(void) {
-    RX_head = RX_next;
+void flush_1(void) {
+    RX_head_1 = RX_next_1;
 }
-
-const Uart uart1 = {
-    baudrate : setBaudRate,
-    copy : copyFrom,
-    drop : dropFrom,
-    flush : flush,
-    size : getRxSize,
-    send : sendFrom,
-    init : initUart,
-    receive : receiveFrom
-};

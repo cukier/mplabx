@@ -3,6 +3,7 @@
 
 #include "uart.h"
 
-extern const Uart uart1;
+void initUart_1(void);
+bool sendFrom_1(const uint8_t* startOfData, uint16_t bytesToSend);
 
 #endif /* UART1_H */

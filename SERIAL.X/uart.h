@@ -11,15 +11,13 @@
 #define ON  1
 #define YES 1
 
-typedef struct {
-    void (*baudrate)(uint16_t baudrate);
-    int (*copy)(uint8_t* storageBuffer, int maxBytesToRead);
-    void (*drop)(int bytesToDrop);
-    void (*flush)(void);
-    uint16_t(*size)(void);
-    bool(*send)(const uint8_t* startOfData, uint16_t bytesToSend);
-    int (*receive)(uint8_t* storageBuffer, int maxBytesToRead);
-    void (*init)(void);
-} Uart;
+void initUart_1(void);
+bool sendFrom_1(const uint8_t* startOfData, uint16_t bytesToSend);
+
+void initUart_2(void);
+bool sendFrom_2(const uint8_t* startOfData, uint16_t bytesToSend);
+
+void initUart_3(void);
+bool sendFrom_3(const uint8_t* startOfData, uint16_t bytesToSend);
 
 #endif /* UART_H */
