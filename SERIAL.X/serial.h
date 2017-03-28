@@ -20,8 +20,8 @@
 #else
 #error Definir BAUDRATE_1
 #endif
-#define U1_TX_RP            (RPOR6bits.RP12R)
-#define U1_RX_RP            (11)
+#define U1_TX_RP            (RPOR1bits.RP2R)
+#define U1_RX_RP            (37)
 #endif
 
 #ifdef USE_UART_2
@@ -40,9 +40,9 @@ extern "C" {
 
 #ifdef USE_UART_1
     void uart1_init(uint8_t *in_buffer);
-    uint16_t uart1_get_index(void);
-    bool uart1_get_rec(void);
-    void uart1_set_rec(void);
+    //    uint16_t uart1_get_index(void);
+    //    bool uart1_get_rec(void);
+    //    void uart1_set_rec(void);
 #endif
 
 #ifdef USE_UART_2
@@ -51,10 +51,12 @@ extern "C" {
     bool uart2_get_rec(void);
     void uart2_set_rec(void);
 #endif
-    
+
 #ifdef USE_UART_3
     void initUart(void);
     bool sendFrom(const uint8_t* startOfData, uint16_t bytesToSend);
+    void setBaudRate(uint64_t desiredBaudRate);
+    uint16_t receiveFrom(uint8_t* startOfStorage, uint16_t maxBytesToRead);
 #endif
 
 #ifdef	__cplusplus

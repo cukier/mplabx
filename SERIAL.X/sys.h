@@ -7,7 +7,7 @@
 #define FCY             (FOSC/2)
 #define BAUDRATE_1      (9600)
 #define BAUDRATE_2      (9600)
-#define BAUDRATE_3      (9600)
+#define BAUDRATE_3      (19200)
 
 #ifdef	__cplusplus
 extern "C" {

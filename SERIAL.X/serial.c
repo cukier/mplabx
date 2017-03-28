@@ -33,7 +33,6 @@ uint16_t RX_next = 0;
 #endif
 
 #ifdef USE_UART_1
-
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
     serial_buffer1[serial_buffer_index1++] = U1RXREG;
 
@@ -68,8 +67,10 @@ void tmr1_init() {
 
 void uart1_init(uint8_t *in_buffer) {
     serial_buffer_index1 = 0;
-    serial_buffer1 = in_buffer;
     rec_ok1 = false;
+
+    if (in_buffer != NULL)
+        serial_buffer1 = in_buffer;
 
     U1MODEbits.STSEL = 0; // 1 stop bit
     U1MODEbits.PDSEL = 0; // 8-bit data, no parity
@@ -79,21 +80,19 @@ void uart1_init(uint8_t *in_buffer) {
     U1BRG = BRGVAL_1; //Baudrate
 
     U1MODEbits.UARTEN = 0; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>    
-    U1STAbits.UTXEN = 0; // Transmit is enabled, UxTX pin is controlled by UARTx
-    U1STAbits.URXEN = 0; // Recive is enabled
+    U1STAbits.UTXEN = 1; // Transmit is enabled, UxTX pin is controlled by UARTx
+//    U1STAbits.URXEN = 0; // Recive is enabled
 
-    IFS0bits.U1RXIF = 0; //limpa falg int rx1
-    IEC0bits.U1RXIE = 1; //habilita interrupcao rx1  
+//    IFS0bits.U1RXIF = 0; //limpa falg int rx1
+//    IEC0bits.U1RXIE = 1; //habilita interrupcao rx1  
 
-    IFS0bits.T1IF = 0;
-    IEC0bits.T1IE = 1;
+//    IFS0bits.T1IF = 0;
+//    IEC0bits.T1IE = 1;
 
-    //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
-    RPINR18bits.U1RXR = U1_RX_RP; // Assign U1RX To Pin RP11    
-    U1_TX_RP = 3; // Assign U1TX To Pin RP12
-    //    __C30_UART = 1; // printf
+//    RPINR18bits.U1RXR = U1_RX_RP; // Assign U1RX To Pin RP11    
+    U1_TX_RP = 3; // Assign U1TX To Pin RP2
 
-    tmr1_init();
+//    tmr1_init();
 
     U1MODEbits.UARTEN = 1;
 
@@ -114,7 +113,6 @@ void uart1_set_rec(void) {
 #endif
 
 #ifdef USE_UART_2
-
 void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
     serial_buffer2[serial_buffer_index2++] = U2RXREG;
 
@@ -173,7 +171,6 @@ void uart2_init(uint8_t *in_buffer) {
     //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
     RPINR19bits.U2RXR = U2_RX_RP; // Assign U2RX To Pin RP11  
     U2_TX_RP = 5; // Assign U2TX To Pin RP12
-    //    __C30_UART = 2; // printf
 
     tmr2_init();
 
@@ -196,7 +193,6 @@ void uart2_set_rec(void) {
 #endif
 
 #ifdef USE_UART_3
-
 void initUart(void) {
     _U3RXIE = 0; // disable UART Rx interrupt
     _U3TXIE = 0; // disable UART Tx interrupt
@@ -223,20 +219,20 @@ void initUart(void) {
     U3BRG = ((FCY / 9600) / 4) - 1; // calculate value for baud register
 
     /* configure pin direction */
-    _TRISD8 = 0; // TX -> output
-    //    _TRISD1 = 1; // RX -> input
+    _TRISD11 = 0; // TX -> output
+    _TRISD0 = 1; // RX -> input
 
     /* map modules to pins */
     __builtin_write_OSCCONL(OSCCON & 0xBF); // unlock peripheral pin select registers
-    _RP2R = 19; // Remmapable pin 2 is UART3 transmit
-    //    _U3RXR = 24; // UART3 receive mapped to remmapable pin 24
+    _RP12R = 19; // Remmapable pin 12 is UART3 transmit
+    _U3RXR = 11; // UART3 receive mapped to remmapable pin 11
     __builtin_write_OSCCONL(OSCCON | 0x40); // lock peripheral pin select registers
 
     /* clear interrupts so they don't immediately interrupt */
     _U3RXIF = OFF; // clear Rx interrupt flag
     _U3TXIF = OFF; // clear Tx interrupt flag
 
-    //    _U3RXIP = 6; // set Rx interrupt priority
+    _U3RXIP = 6; // set Rx interrupt priority
     _U3TXIP = 4; // set Tx interrupt priority
 
     U3MODEbits.UARTEN = ON; // enable the UART module now that its configured
@@ -244,7 +240,7 @@ void initUart(void) {
     /* Note: UART Tx cannot be enabled until the UART module itself has been enabled. */
     U3STAbits.UTXEN = YES; // enable UART transmitter
 
-    //    _U3RXIE = 1; // enable UART Rx interrupt
+    _U3RXIE = 1; // enable UART Rx interrupt
 }
 
 uint16_t getTxSize(void) {
@@ -355,11 +351,11 @@ int copyFrom(uint8_t* startOfStorage, int maxBytesToRead) {
     return count;
 }
 
-int receiveFrom(uint8_t* startOfStorage, int maxBytesToRead) {
+uint16_t receiveFrom(uint8_t* startOfStorage, uint16_t maxBytesToRead) {
     if (!startOfStorage)
         return 0;
 
-    int count = 0;
+    uint16_t count = 0;
 
     while (maxBytesToRead-- && (RX_head != RX_next)) {
         startOfStorage[count++] = RX_buffer[RX_head++];
@@ -382,5 +378,4 @@ void dropFrom(int bytesToDrop) {
 void flush(void) {
     RX_head = RX_next;
 }
-
 #endif
