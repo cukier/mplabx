@@ -2,7 +2,6 @@
 #define	SYS_H
 
 #define FOSC                    (16000000ULL)
-#define SERIAL_BUFFER_SIZE      256
 #define FCY                     (FOSC/2)
 #define BAUDRATE_1              (19200)
 #define BAUDRATE_2              (9600)
