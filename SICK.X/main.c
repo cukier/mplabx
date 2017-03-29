@@ -20,18 +20,15 @@
 int main(void) {
     bool encoder_ok;
     uint32_t pos, res;
-    float ang;
 #ifdef DEBUG_UART1
+    float ang;
     uint8_t debug_buffer[SERIAL1_BUFFER_SIZE];
 #endif
 
     pos = 0;
     encoder_ok = false;
 
-#ifdef DEBUG_UART1
-    uart1_init(debug_buffer);
-#endif
-
+    uart_init();
     DSF60_init_encoder();
     __delay_ms(100);
 #ifdef DEBUG_UART1
