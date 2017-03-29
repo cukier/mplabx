@@ -54,16 +54,25 @@ int main(void) {
     uint16_t n;
     uint8_t data[3] = {1, 2, 3};
     uint8_t rcv[3] = {0};
-    
+    uint8_t rcv2[3] = {0};
+
     uart_init();
 
     while (1) {
+        n = 0;
         uart1_send(data, 3);
         n = uart1_get(rcv, 3);
-        
+
         if (n != 0)
             n = 0;
-        
+
+        n = 0;
+        uart2_send(data, 3);
+        n = uart2_get(rcv2, 3);
+
+        if (n != 0)
+            n = 0;
+
         __delay_ms(1000);
     }
 

@@ -15,6 +15,8 @@ extern "C" {
     void uart_init(void);
     bool uart1_send(uint8_t *data, uint16_t size);
     uint16_t uart1_get(uint8_t *data, uint16_t size);
+    bool uart2_send(uint8_t *data, uint16_t size);
+    uint16_t uart2_get(uint8_t *data, uint16_t size);
 
 #ifdef	__cplusplus
 }
