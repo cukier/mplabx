@@ -59,6 +59,7 @@
 
 #include "sys.h"
 #include "modbus.h"
+#include "serial.h"
 #include <xc.h>
 #include <libpic30.h>
 #include <p24FJ1024GB606.h>
@@ -69,9 +70,11 @@
 
 int main(void) {
     
+    uart_init();
     modbus_init();    
     
     while(true) {
+        __delay_ms(100);
         slave_response();
     }        
 
