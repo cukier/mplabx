@@ -1,12 +1,6 @@
 #ifndef SYS_H
 #define	SYS_H
 
-#define USE_UART_1
-#define USE_UART_2
-#define USE_I2C_1
-#define MODBUS_UART_1
-//#define MODBUS_UART_2
-
 #define FOSC                    (16000000ULL)
 #define SERIAL_BUFFER_SIZE      256
 #define FCY                     (FOSC/2)
@@ -14,8 +8,7 @@
 #define BAUDRATE_2              (9600)
 #define BAUDRATE_3              (19200)
 #define FSCK_1                  (100000)
-#define SLV_ADDR_1              (1)
-#define SLV_ADDR_2              (1)
+#define MODBUS_SLV_ADDR         (2)
 
 #ifdef	__cplusplus
 extern "C" {

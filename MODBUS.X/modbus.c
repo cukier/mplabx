@@ -45,7 +45,18 @@ uint16_t CRC16(uint8_t *nData, uint16_t wLength) {
 }
 
 bool send_modbus(uint8_t *data, uint16_t i_size) {
-    return uart3_send(data, i_size);
+    bool ret = false;
+#ifdef MODBUS_UART_1
+    ret = uart1_send(data, i_size);
+#endif
+#ifdef MODBUS_UART_2
+    ret = uart2_send(data, i_size);
+#endif
+#ifdef MODBUS_UART_3
+    ret = uart3_send(data, i_size);
+#endif
+
+    return ret;
 }
 
 bool return_error(uint8_t address, modbus_command_t command,
@@ -95,15 +106,23 @@ bool slave_response(void) {
     ret = false;
     respond_now = false;
     n = 0;
+#ifdef MODBUS_UART_1
+    n = uart1_get(request, 256);
+#endif
+#ifdef MODBUS_UART_2
+    n = uart2_get(request, 256);
+#endif
+#ifdef MODBUS_UART_3
     n = uart3_get(request, 256);
+#endif
 
     if (n != 0) {
         index_rda = n;
         respond_now = true;
 #ifdef USE_PIVO_STR
         my_address = pivo->endereco;
-#elif defined SLV_ADDR_1
-        my_address = SLV_ADDR_1;
+#elif defined MODBUS_SLV_ADDR
+        my_address = MODBUS_SLV_ADDR;
 #else
         my_address = 1;
 #endif
