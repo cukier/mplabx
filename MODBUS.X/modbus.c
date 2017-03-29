@@ -89,15 +89,15 @@ bool return_error(uint8_t address, modbus_command_t command,
 bool slave_response(void) {
     uint8_t my_address, response[256], request[256], tmp_var[2];
     uint16_t register_value, register_address, b_count, cont,
-            aux, aux_addr, index_rda, n;
+            request_crc, aux_addr, index_rda, n, my_crc;
     bool ret, respond_now;
 
     ret = false;
     respond_now = false;
     n = 0;
     n = uart3_get(request, 256);
-    
-    if (n != 0) {        
+
+    if (n != 0) {
         index_rda = n;
         respond_now = true;
 #ifdef USE_PIVO_STR
@@ -117,10 +117,11 @@ bool slave_response(void) {
                 request[MODBUS_FIELDS_REGISTER_ADDRESS_L];
         b_count = request[MODBUS_FIELDS_BYTE_COUNT];
         aux_addr = 2 * register_address;
-        aux = ((request[index_rda - 1] << 8) | (request[index_rda - 2]));
+        request_crc = ((request[index_rda - 1] << 8) | (request[index_rda - 2]));
+        my_crc = CRC16(request, index_rda - 2);
 
         if ((my_address == request[MODBUS_FIELDS_ADDRESS])
-                && (CRC16(request, index_rda - 2) == aux)) {
+                && my_crc == request_crc) {
             switch (request[MODBUS_FIELDS_FUNCTION]) {
                 case READ_HOLDING_REGISTERS_COMMAND:
                     if (register_value == 0 || register_value > 0x7D) {
@@ -139,9 +140,9 @@ bool slave_response(void) {
                         response[1] = READ_HOLDING_REGISTERS_COMMAND;
                         response[2] = (uint8_t) b_count;
                         read_ext_eeprom(aux_addr, &response[3], b_count);
-                        aux = CRC16(response, b_count + 3);
-                        response[b_count + 3] = (uint8_t) (aux & 0xFF);
-                        response[b_count + 4] = (uint8_t) ((aux & 0xFF00) >> 8);
+                        request_crc = CRC16(response, b_count + 3);
+                        response[b_count + 3] = (uint8_t) (request_crc & 0xFF);
+                        response[b_count + 4] = (uint8_t) ((request_crc & 0xFF00) >> 8);
                         ret = send_modbus(response, b_count + 5);
                     }
                     break;
@@ -181,9 +182,9 @@ bool slave_response(void) {
                         response[3] = (uint8_t) (register_address & 0xFF);
                         response[4] = (uint8_t) ((register_value & 0xFF00) >> 8);
                         response[5] = (uint8_t) (register_value & 0xFF);
-                        aux = CRC16(response, 6);
-                        response[6] = (uint8_t) ((aux & 0xFF00) >> 8);
-                        response[7] = (uint8_t) (aux & 0xFF);
+                        request_crc = CRC16(response, 6);
+                        response[6] = (uint8_t) ((request_crc & 0xFF00) >> 8);
+                        response[7] = (uint8_t) (request_crc & 0xFF);
                         ret = send_modbus(response, 8);
                     }
                     break;

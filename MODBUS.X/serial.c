@@ -3,7 +3,7 @@
 #include <libpic30.h>
 
 #define RX_BUFFER_SIZE    0x012C
-#define TX_BUFFER_SIZE    0x0040
+#define TX_BUFFER_SIZE    0x012C
 
 uint16_t rx_head_1, rx_next_1, tx_head_1, tx_next_1;
 uint8_t rx_buffer_1[RX_BUFFER_SIZE], tx_buffer_1[RX_BUFFER_SIZE];
