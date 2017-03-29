@@ -2,7 +2,7 @@
 #include "sys.h"
 #include <libpic30.h>
 
-#define RX_BUFFER_SIZE    0x0800
+#define RX_BUFFER_SIZE    0x012C
 #define TX_BUFFER_SIZE    0x0040
 
 uint16_t rx_head_1, rx_next_1, tx_head_1, tx_next_1;
@@ -126,9 +126,9 @@ void uart_init(void) {
     U3STAbits.UTXEN = 1; // enable UART transmitter
     U3STAbits.URXEN = 1;
 
-    U1BRG = ((FCY / 9600) / 4) - 1;
-    U2BRG = ((FCY / 9600) / 4) - 1;
-    U3BRG = ((FCY / 9600) / 4) - 1;
+    U1BRG = ((FCY / BAUDRATE_1) / 4) - 1;
+    U2BRG = ((FCY / BAUDRATE_2) / 4) - 1;
+    U3BRG = ((FCY / BAUDRATE_3) / 4) - 1;
 
     _TRISD8 = 0; // TX1 -> output
     _TRISD1 = 1; // RX1 -> input
