@@ -24,6 +24,7 @@ extern "C" {
     char *DSF60_get_partNumber(void);
     char *DSF60_get_encoderType(void);
     char *DSF60_get_dateCode(void);    
+    bool DSF60_set_resolution (uint32_t resol);
 
 #ifdef	__cplusplus
 }

@@ -125,9 +125,9 @@ void DSF60_set_number_lines(uint32_t n_lines) {
 
     req[0] = DSF60_ADDRESS;
     req[1] = DSF60_COMMAND_SET_NUMBER_OF_LINES;
-    req[2] = (uint8_t) ((n_lines & 0x0F00) >> 16);
-    req[3] = (uint8_t) ((n_lines & 0x00F0) >> 8);
-    req[4] = (uint8_t) ((n_lines & 0x000F));
+    req[2] = (uint8_t) ((n_lines & 0xFF0000) >> 16);
+    req[3] = (uint8_t) ((n_lines & 0x00FF00) >> 8);
+    req[4] = (uint8_t) ((n_lines & 0x0000FF));
     req[5] = 0x69; //ACCESS code
     req[6] = DSF60_crc_sum(req, 6);
     DSF60_send_request(req, 7);
@@ -252,7 +252,7 @@ uint16_t make16(uint8_t h, uint8_t l) {
 }
 
 bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
-    uint8_t retries, n, cont, t, response[BUFFER_MAX];
+    uint8_t retries, n, cont, t;
     uint16_t pulse_width_resp;
 
     retries = 200;
@@ -326,7 +326,7 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
     }
 #endif
 #ifdef ENCODER_USE_UART2
-    if (uart2_get(response, BUFFER_MAX) != n) {
+    if (uart2_get(dsf60_buffer, BUFFER_MAX) != n) {
         return false;
     }
 #endif
@@ -488,4 +488,8 @@ char *DSF60_get_encoderType(void) {
 
 char *DSF60_get_dateCode(void) {
     return dsf60.date_code;
+}
+
+bool DSF60_set_resolution (uint32_t resol) {
+    return DSF60_make_transaction(DSF60_COMMAND_SET_NUMBER_OF_LINES, resol);
 }

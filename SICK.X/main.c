@@ -22,11 +22,11 @@ int main(void) {
     uint32_t pos, res;
 #ifdef DEBUG_UART1
     float ang;
-    uint8_t debug_buffer[SERIAL1_BUFFER_SIZE];
 #endif
 
     pos = 0;
     encoder_ok = false;
+    res = 0;
 
     uart_init();
     DSF60_init_encoder();
@@ -39,7 +39,6 @@ int main(void) {
     __delay_ms(1500);
 
     if (encoder_ok) {
-        res = 0;
         do {
             res = DSF60_get_resolution();
 #ifdef DEBUG_UART1
@@ -52,6 +51,10 @@ int main(void) {
             if (res == 0 || res > 10000)
                 __delay_ms(1000);
         } while (res == 0 || res > 10000);
+
+        DSF60_set_resolution(512);
+
+//        while (true);
     }
 
     while (true) {
