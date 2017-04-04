@@ -2,175 +2,367 @@
 #include "sys.h"
 #include <libpic30.h>
 
+#define RX_BUFFER_SIZE    0x012C
+#define TX_BUFFER_SIZE    0x012C
+
 #ifdef USE_UART_1
-uint16_t serial_buffer_index1, serial_buff_rec1;
-uint8_t *serial_buffer1;
-bool rec_ok1;
+uint16_t rx_head_1, rx_next_1, tx_head_1, tx_next_1;
+uint8_t rx_buffer_1[RX_BUFFER_SIZE], tx_buffer_1[RX_BUFFER_SIZE];
+#endif
+#ifdef USE_UART_2
+uint16_t rx_head_2, rx_next_2, tx_head_2, tx_next_2;
+uint8_t rx_buffer_2[RX_BUFFER_SIZE], tx_buffer_2[RX_BUFFER_SIZE];
+#endif
+#ifdef USE_UART_3
+uint16_t rx_head_3, rx_next_3, tx_head_3, tx_next_3;
+uint8_t rx_buffer_3[RX_BUFFER_SIZE], tx_buffer_3[RX_BUFFER_SIZE];
 #endif
 
-#ifdef USE_UART_2
-uint16_t serial_buffer_index2, serial_buff_rec2;
-uint8_t *serial_buffer2;
-bool rec_ok2;
+void uart_init(void) {
+#ifdef USE_UART_1
+    rx_head_1 = 0;
+    rx_next_1 = 0;
+    tx_head_1 = 0;
+    tx_next_1 = 0;
+
+    _U1RXIE = 0; // disable UART1 Rx interrupt
+    _U1TXIE = 0; // disable UART1 Tx interrupt
+
+    U1MODE = 0;
+    U1MODEbits.BRGH = 1; // high speed baud rate
+    U1STA = 0;
+    U1STAbits.UTXISEL1 = 1; // interrupt when Tx buffer is empty
+    U1STAbits.UTXEN = 1; // enable UART transmitter
+    U1STAbits.URXEN = 1;
+
+    U1BRG = ((FCY / BAUDRATE_1) / 4) - 1;
+
+    _TRISD8 = 0; // TX1 -> output
+    _TRISD1 = 1; // RX1 -> input
 #endif
+#ifdef USE_UART_2    
+    rx_head_2 = 0;
+    rx_next_2 = 0;
+    tx_head_2 = 0;
+    tx_next_2 = 0;
+
+    _U2RXIE = 0; // disable UART2 Rx interrupt
+    _U2TXIE = 0; // disable UART2 Tx interrupt
+
+    U2MODEbits.UARTEN = 0; // disable the UART module while configuring
+    U2MODE = 0;
+    U2MODEbits.BRGH = 1; // high speed baud rate
+    U2STA = 0;
+    U2STAbits.UTXISEL1 = 1; // interrupt when Tx buffer is empty
+    U2STAbits.UTXEN = 1; // enable UART transmitter
+    U2STAbits.URXEN = 1;
+
+    U2BRG = ((FCY / BAUDRATE_2) / 4) - 1;
+
+    _TRISD2 = 0; // TX2 -> output
+    _TRISD3 = 1; // RX2 -> input
+#endif
+#ifdef USE_UART_3    
+    rx_head_3 = 0;
+    rx_next_3 = 0;
+    tx_head_3 = 0;
+    tx_next_3 = 0;
+
+    _U3RXIE = 0; // disable UART3 Rx interrupt
+    _U3TXIE = 0; // disable UART3 Tx interrupt = 0; // disable the UART module while configuring
+
+    U3MODEbits.UARTEN = 0; // disable the UART module while configuring
+    U3MODE = 0;
+    U3MODEbits.BRGH = 1; // high speed baud rate
+    U3STA = 0;
+    U3STAbits.UTXISEL1 = 1; // interrupt when Tx buffer is empty
+    U3STAbits.UTXEN = 1; // enable UART transmitter
+    U3STAbits.URXEN = 1;
+
+    U3BRG = ((FCY / BAUDRATE_3) / 4) - 1;
+
+    _TRISD11 = 0; // TX3 -> output
+    _TRISD0 = 1; // RX3 -> input
+#endif
+
+    __builtin_write_OSCCONL(OSCCON & 0xBF); // unlock peripheral pin select registers
+#ifdef USE_UART_1
+    _RP2R = 3; // UART1 transmit
+    _U1RXR = 24; // UART1 receive
+#endif
+#ifdef USE_UART_2    
+    _RP23R = 5; // UART2 transmit
+    _U2RXR = 22; // UART2 receive    
+#endif
+#ifdef USE_UART_3    
+    _RP12R = 19; // UART3 transmit
+    _U3RXR = 11; // UART2 receive
+#endif    
+    __builtin_write_OSCCONL(OSCCON | 0x40); // lock peripheral pin select registers
+
+#ifdef USE_UART_1    
+    _U1RXIF = 0; // clear Rx interrupt flag
+    _U1TXIF = 0; // clear Tx interrupt flag
+
+    U1MODEbits.UARTEN = 1; // enable the UART module now that its configured    
+
+    U1STAbits.UTXEN = 1; // enable UART transmitter
+    U1STAbits.URXEN = 1;
+    _U1RXIE = 1; // enable UART Rx interrupt
+#endif    
+#ifdef USE_UART_2    
+    _U2RXIF = 0; // clear Rx interrupt flag
+    _U2TXIF = 0; // clear Tx interrupt flag
+
+    U2MODEbits.UARTEN = 1; // enable the UART module now that its configured
+
+    U2STAbits.UTXEN = 1; // enable UART transmitter
+    U2STAbits.URXEN = 1;
+    _U2RXIE = 1; // enable UART Rx interrupt
+#endif    
+#ifdef USE_UART_3    
+    _U3RXIF = 0; // clear Rx interrupt flag
+    _U3TXIF = 0; // clear Tx interrupt flag
+
+    U3MODEbits.UARTEN = 1; // enable the UART module now that its configured
+
+    U3STAbits.UTXEN = 1; // enable UART transmitter
+    U3STAbits.URXEN = 1;
+    _U3RXIE = 1; // enable UART Rx interrupt
+#endif
+    return;
+}
 
 #ifdef USE_UART_1
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
-    serial_buffer1[serial_buffer_index1++] = U1RXREG;
+    while (U1STAbits.URXDA) { // while data is available    
+        rx_buffer_1[rx_next_1++] = U1RXREG; // copy byte to buffer
+        rx_next_1 %= RX_BUFFER_SIZE; // protect against rollover
 
-    if (serial_buffer_index1 >= SERIAL_BUFFER_SIZE)
-        serial_buffer_index1 = 0;
+        /* accommodate overflow */
+        if (rx_head_1 == rx_next_1)
+            rx_head_1 = (rx_head_1 + 1) % RX_BUFFER_SIZE;
+    }
 
-    T1CONbits.TCKPS = 1; //1:8
-    IFS0bits.U1RXIF = 0; //limpa flag int rx     
-    T1CONbits.TON = 1; //liga timer 1
-    PR1 = UINT16_MAX; //periodo timer 1
-    rec_ok1 = false;
+    _U1RXIF = 0; // clear Rx interrupt flag
 }
 
-void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
-    T1CONbits.TON = 0; //desliga timer    
-    _T1IF = 0; //deliga flag interrupcao
-    serial_buff_rec1 = serial_buffer_index1;
-    serial_buffer_index1 = 0;
-    rec_ok1 = true;
+void __attribute__((interrupt, no_auto_psv)) _U1TXInterrupt(void) {
+    _U1TXIF = 0; // clear Tx interrupt flag
+
+    /* transmit if transmit queue has room and buffer is not empty */
+    while (!(U1STAbits.UTXBF) && (tx_head_1 != tx_next_1)) {
+        U1TXREG = tx_buffer_1[tx_head_1++];
+        tx_head_1 %= TX_BUFFER_SIZE;
+    }
 }
 
-void tmr1_init() {
-    T1CON = 0; //limpa registrador    
-    _T1IP = 1; //prioriedade interrupcao timer 1 alta    
-    _T1IF = 0; //limpa flag de disparo timer 1
-    _T1IE = 1; //habilita interrupcao timer 1
-    PR1 = 65535;
-    //tempo = 2 x PR1 x TCKPS / FOSC
-    //tempo = 2 x 30000 x 256 / 16000000
-    return;
+uint16_t getTxSpace_1(void) {
+    return tx_head_1 - tx_next_1 - 1
+            + (tx_head_1 <= tx_next_1 ? TX_BUFFER_SIZE : 0);
 }
 
-void uart1_init(uint8_t *in_buffer) {
-    serial_buffer_index1 = 0;
-    serial_buffer1 = in_buffer;
-    rec_ok1 = false;
+bool uart1_send(uint8_t *data, uint16_t size) {
+    /* can't send nonexistent data or no data */
+    if (!data || !size)
+        return false;
 
-    U1MODEbits.STSEL = 0; // 1 stop bit
-    U1MODEbits.PDSEL = 0; // 8-bit data, no parity
-    U1MODEbits.ABAUD = 0; // Baud rate measurement is disabled or completed
-    U1MODEbits.BRGH = 0; // Standard Speed mode
+    /* make sure room is available in buffer */
+    while (getTxSpace_1() < size);
 
-    U1BRG = BRGVAL_1; //Baudrate
+    /* send bytes while bytes still need to be sent */
+    while (size--) {
+        tx_buffer_1[tx_next_1++] = *data;
 
-    U1MODEbits.UARTEN = 0; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>    
-    U1STAbits.UTXEN = 0; // Transmit is enabled, UxTX pin is controlled by UARTx
-    U1STAbits.URXEN = 0; // Recive is enabled
+        /* circular queue rollover protection */
+        tx_next_1 %= TX_BUFFER_SIZE;
 
-    IFS0bits.U1RXIF = 0; //limpa falg int rx1
-    IEC0bits.U1RXIE = 1; //habilita interrupcao rx1  
+        /* accommodate overflow */
+        if (tx_head_1 == tx_next_1)
+            tx_head_1 = (tx_head_1 + 1) % TX_BUFFER_SIZE;
 
-    IFS0bits.T1IF = 0;
-    IEC0bits.T1IE = 1;
+        ++data;
+    }
 
-    //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
-    RPINR18bits.U1RXR = U1_RX_RP; // Assign U1RX To Pin RP11    
-    U1_TX_RP = 3; // Assign U1TX To Pin RP12
-    __C30_UART = 1; // printf
+    _U1TXIE = 1;
+    _U1TXIF = 1;
 
-    tmr1_init();
-
-    U1MODEbits.UARTEN = 1;
-
-    return;
+    return true;
 }
 
-uint16_t uart1_get_index(void) {
-    return serial_buff_rec1;
-}
+uint16_t uart1_get(uint8_t *data, uint16_t size) {
+    uint16_t count = 0;
 
-bool uart1_get_rec(void) {
-    return rec_ok1;
-}
+    if (!data)
+        return false;
 
-void uart1_set_rec(void) {
-    rec_ok1 = false;
+    _U1RXIE = 0;
+
+    while (size-- && (rx_head_1 != rx_next_1)) {
+        data[count++] = rx_buffer_1[rx_head_1++];
+        rx_head_1 %= RX_BUFFER_SIZE;
+    }
+
+    _U1RXIE = 1;
+
+    return count;
 }
 #endif
 
 #ifdef USE_UART_2
 void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
-    serial_buffer2[serial_buffer_index2++] = U2RXREG;
+    while (U2STAbits.URXDA) { // while data is available    
+        rx_buffer_2[rx_next_2++] = U2RXREG; // copy byte to buffer
+        rx_next_2 %= RX_BUFFER_SIZE; // protect against rollover
 
-    if (serial_buffer_index2 >= SERIAL_BUFFER_SIZE)
-        serial_buffer_index2 = 0;
+        /* accommodate overflow */
+        if (rx_head_2 == rx_next_2)
+            rx_head_2 = (rx_head_2 + 1) % RX_BUFFER_SIZE;
+    }
 
-    T2CONbits.TCKPS = 1; //1:8
-    IFS1bits.U2RXIF = 0; //limpa flag int rx         
-    T2CONbits.TON = 1; //liga timer 2    
-    PR2 = UINT16_MAX; //periodo timer 2
-    rec_ok2 = false;
+    _U2RXIF = 0; // clear Rx interrupt flag
 }
 
-void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
-    T2CONbits.TON = 0; //desliga timer    
-    _T2IF = 0; //deliga flag interrupcao
-    serial_buff_rec2 = serial_buffer_index2;
-    serial_buffer_index2 = 0;
-    rec_ok2 = true;
+void __attribute__((interrupt, no_auto_psv)) _U2TXInterrupt(void) {
+    _U2TXIF = 0; // clear Tx interrupt flag
+
+    /* transmit if transmit queue has room and buffer is not empty */
+    while (!(U2STAbits.UTXBF) && (tx_head_2 != tx_next_2)) {
+        U2TXREG = tx_buffer_2[tx_head_2++];
+        tx_head_2 %= TX_BUFFER_SIZE;
+    }
 }
 
-void tmr2_init() {
-    T2CON = 0; //limpa registrador    
-    _T2IP = 1; //prioriedade interrupcao timer 1 alta    
-    _T2IF = 0; //limpa flag de disparo timer 1
-    _T2IE = 1; //habilita interrupcao timer 1
-    T2CONbits.T32 = 0; //16bit timer
-    PR2 = 65535;
-    //tempo = 2 x PR1 x TCKPS / FOSC
-    //tempo = 2 x 30000 x 256 / 16000000
-    return;
+uint16_t getTxSpace_2(void) {
+    return tx_head_2 - tx_next_2 - 1
+            + (tx_head_2 <= tx_next_2 ? TX_BUFFER_SIZE : 0);
 }
 
-void uart2_init(uint8_t *in_buffer) {
-    serial_buffer_index2 = 0;
-    serial_buffer2 = in_buffer;
-    rec_ok2 = false;
+bool uart2_send(uint8_t *data, uint16_t size) {
+    /* can't send nonexistent data or no data */
+    if (!data || !size)
+        return false;
 
-    U2MODEbits.STSEL = 0; // 1 stop bit
-    U2MODEbits.PDSEL = 0; // 8-bit data, no parity
-    U2MODEbits.ABAUD = 0; // Baud rate measurement is disabled or completed
-    U2MODEbits.BRGH = 0; // Standard Speed mode
+    /* make sure room is available in buffer */
+    while (getTxSpace_2() < size);
 
-    U2BRG = BRGVAL_2; //Baudrate
+    /* send bytes while bytes still need to be sent */
+    while (size--) {
+        tx_buffer_2[tx_next_2++] = *data;
 
-    U2MODEbits.UARTEN = 0; // UARTx is enabled; all UARTx pins are controlled by UARTx as defined by UEN<1:0>    
-    U2STAbits.UTXEN = 0; // Transmit is enabled, UxTX pin is controlled by UARTx
-    U2STAbits.URXEN = 0; // Recive is enabled
+        /* circular queue rollover protection */
+        tx_next_2 %= TX_BUFFER_SIZE;
 
-    IFS1bits.U2RXIF = 0; //limpa falg int rx2
-    IEC1bits.U2RXIE = 1; //habilita interrupcao rx2  
+        /* accommodate overflow */
+        if (tx_head_2 == tx_next_2)
+            tx_head_2 = (tx_head_2 + 1) % TX_BUFFER_SIZE;
 
-    IFS0bits.T2IF = 0;
-    IEC0bits.T2IE = 1;
+        ++data;
+    }
 
-    //__builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
-    RPINR19bits.U2RXR = U2_RX_RP; // Assign U2RX To Pin RP11  
-    U2_TX_RP = 5; // Assign U2TX To Pin RP12
-    __C30_UART = 2; // printf
+    _U2TXIE = 1;
+    _U2TXIF = 1;
 
-    tmr2_init();
-
-    U2MODEbits.UARTEN = 1;
-
-    return;
+    return true;
 }
 
-uint16_t uart2_get_index(void) {
-    return serial_buff_rec2;
-}
+uint16_t uart2_get(uint8_t *data, uint16_t size) {
+    uint16_t count = 0;
 
-bool uart2_get_rec(void) {
-    return rec_ok2;
-}
+    if (!data)
+        return false;
 
-void uart2_set_rec(void) {
-    rec_ok2 = false;
+    _U2RXIE = 0;
+
+    while (size-- && (rx_head_2 != rx_next_2)) {
+        data[count++] = rx_buffer_2[rx_head_2++];
+        rx_head_2 %= RX_BUFFER_SIZE;
+    }
+
+    _U2RXIE = 1;
+
+    return count;
 }
 #endif
+
+#ifdef USE_UART_3
+void __attribute__((interrupt, no_auto_psv)) _U3RXInterrupt(void) {
+    while (U3STAbits.URXDA) { // while data is available    
+        rx_buffer_3[rx_next_3++] = U3RXREG; // copy byte to buffer
+        rx_next_3 %= RX_BUFFER_SIZE; // protect against rollover
+
+        /* accommodate overflow */
+        if (rx_head_3 == rx_next_3)
+            rx_head_3 = (rx_head_3 + 1) % RX_BUFFER_SIZE;
+    }
+
+    _U3RXIF = 0; // clear Rx interrupt flag
+}
+
+void __attribute__((interrupt, no_auto_psv)) _U3TXInterrupt(void) {
+    _U3TXIF = 0; // clear Tx interrupt flag
+
+    /* transmit if transmit queue has room and buffer is not empty */
+    while (!(U3STAbits.UTXBF) && (tx_head_3 != tx_next_3)) {
+        U3TXREG = tx_buffer_3[tx_head_3++];
+        tx_head_3 %= TX_BUFFER_SIZE;
+    }
+}
+
+uint16_t getTxSpace_3(void) {
+    return tx_head_3 - tx_next_3 - 1
+            + (tx_head_3 <= tx_next_3 ? TX_BUFFER_SIZE : 0);
+}
+
+bool uart3_send(uint8_t *data, uint16_t size) {
+    /* can't send nonexistent data or no data */
+    if (!data || !size)
+        return false;
+
+    /* make sure room is available in buffer */
+    while (getTxSpace_3() < size);
+
+    /* send bytes while bytes still need to be sent */
+    while (size--) {
+        tx_buffer_3[tx_next_3++] = *data;
+
+        /* circular queue rollover protection */
+        tx_next_3 %= TX_BUFFER_SIZE;
+
+        /* accommodate overflow */
+        if (tx_head_3 == tx_next_3)
+            tx_head_3 = (tx_head_3 + 1) % TX_BUFFER_SIZE;
+
+        ++data;
+    }
+
+    _U3TXIE = 1;
+    _U3TXIF = 1;
+
+    return true;
+}
+
+uint16_t uart3_get(uint8_t *data, uint16_t size) {
+    uint16_t count = 0;
+
+    if (!data)
+        return false;
+
+    _U3RXIE = 0;
+
+    while (size-- && (rx_head_3 != rx_next_3)) {
+        data[count++] = rx_buffer_3[rx_head_3++];
+        rx_head_3 %= RX_BUFFER_SIZE;
+    }
+
+    _U3RXIE = 1;
+
+    return count;
+}
+
+uint16_t uart3_getRxSize(void) {
+    return rx_next_3 - rx_head_3
+            + (rx_head_3 > rx_next_3 ? RX_BUFFER_SIZE : 0);
+}
+#endif
+
