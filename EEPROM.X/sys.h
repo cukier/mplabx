@@ -1,12 +1,8 @@
 #ifndef SYS_H
 #define	SYS_H
 
-//#define USE_UART_1
-#define USE_UART_2
-#define USE_I2C_1
-
 #define FOSC                    (16000000ULL)
-#define SERIAL_BUFFER_SIZE      256
+#define SERIAL_BUFFER_SIZE      (256)
 #define FCY                     (FOSC/2)
 #define BAUDRATE_1              (9600)
 #define BAUDRATE_2              (9600)

@@ -15,11 +15,11 @@ bool ext_eeprom_ready(void) {
     cont = UINT8_MAX;
 
     while (!I2C1_get_ack(EEPROM_ADDR) && cont--) {
-        __delay_ms(10);
-    }
+        __delay_ms(1);
 
-    if (!cont)
-        return false;
+        if (!cont)
+            return false;
+    }
 
     return true;
 }
@@ -55,11 +55,11 @@ bool write_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
     block_addr = ((uint16_t) (address / EEPROM_PAGE_SIZE)) * EEPROM_PAGE_SIZE;
     offset = address - block_addr;
     read_buffer = NULL;
-    read_buffer = (uint8_t *) malloc(EEPROM_PAGE_SIZE * sizeof(uint8_t));
+    read_buffer = (uint8_t *) malloc(EEPROM_PAGE_SIZE * sizeof (uint8_t));
 
     if (read_buffer == NULL)
         return false;
-    
+
     do {
         I2C1_get_data(EEPROM_ADDR, block_addr, read_buffer, EEPROM_PAGE_SIZE);
 

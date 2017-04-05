@@ -68,18 +68,18 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define TEST_SIZE   4096
+#define TEST_SIZE   5
 #define TEST_ADDR   10
 
 int main(void) {
-    uint8_t buff_uart[10] = { 0 };
     uint8_t array_a[TEST_SIZE] = {0};
     uint8_t array_b[TEST_SIZE] = {0};
     uint8_t array_c[TEST_SIZE] = {0};
     uint16_t cont;
 
     init_ext_eeprom();
-    uart2_init(buff_uart);
+    uart_init();
+    __C30_UART = 2;
     __delay_ms(500);
     printf("\nHello\n");
 
@@ -90,16 +90,15 @@ int main(void) {
     read_ext_eeprom(0, array_a, TEST_SIZE);
     write_ext_eeprom(0, array_b, TEST_SIZE);
     read_ext_eeprom(0, array_c, TEST_SIZE);
-    
+
     for (cont = 0; cont < TEST_SIZE; ++cont) {
         printf("%03u %03u %03u %03u\n", cont, array_a[cont], array_b[cont], array_c[cont]);
     }
-    
+
     printf("\n");
-    
-    while(true) {
-//        ClrWdt();
-    }        
+
+    while (true)
+        ;
 
     return 0;
 }
