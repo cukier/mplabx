@@ -68,8 +68,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define TEST_SIZE   5
-#define TEST_ADDR   10
+#define TEST_SIZE   4098
+#define TEST_ADDR   0
 
 int main(void) {
     uint8_t array_a[TEST_SIZE] = {0};

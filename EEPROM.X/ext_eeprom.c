@@ -3,9 +3,38 @@
 #include <libpic30.h>
 #include <stdlib.h>
 
-void init_ext_eeprom(void) {
-    I2C1_Initialize();
+bool eeprom_en;
 
+void init_ext_eeprom(void) {
+    _TRISE0 = 0; //eeprom hard reset
+    _LATE0 = 1; //enable eeprom
+    eeprom_en = true;
+    
+    I2C1_Initialize();
+    
+    return;
+}
+
+void ext_eeprom_enable(void) {
+    _LATE0 = 1;
+    eeprom_en = true;
+    
+    return;
+}
+
+void ext_eeprom_disable(void) {
+    _LATE0 = 0;
+    eeprom_en = false;
+    
+    return;
+}
+
+void ext_eeprom_reboot(void) {
+    ext_eeprom_disable();
+    __delay_ms(500);
+    ext_eeprom_enable();
+    __delay_ms(500);
+    
     return;
 }
 
@@ -13,9 +42,14 @@ bool ext_eeprom_ready(void) {
     uint8_t cont;
 
     cont = UINT8_MAX;
+    
+    if (!eeprom_en) {
+        ext_eeprom_enable();
+        __delay_ms(50);
+    }
 
     while (!I2C1_get_ack(EEPROM_ADDR) && cont--) {
-        __delay_ms(1);
+        ext_eeprom_reboot();
 
         if (!cont)
             return false;
