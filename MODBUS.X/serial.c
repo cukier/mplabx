@@ -134,6 +134,7 @@ void uart_init(void) {
 }
 
 #ifdef USE_UART_1
+
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
     while (U1STAbits.URXDA) { // while data is available    
         rx_buffer_1[rx_next_1++] = U1RXREG; // copy byte to buffer
@@ -210,6 +211,7 @@ uint16_t uart1_get(uint8_t *data, uint16_t size) {
 #endif
 
 #ifdef USE_UART_2
+
 void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void) {
     while (U2STAbits.URXDA) { // while data is available    
         rx_buffer_2[rx_next_2++] = U2RXREG; // copy byte to buffer
@@ -283,9 +285,15 @@ uint16_t uart2_get(uint8_t *data, uint16_t size) {
 
     return count;
 }
+
+uint16_t uart2_getRxSize(void) {
+    return rx_next_2 - rx_head_2
+            + (rx_head_2 > rx_next_2 ? RX_BUFFER_SIZE : 0);
+}
 #endif
 
 #ifdef USE_UART_3
+
 void __attribute__((interrupt, no_auto_psv)) _U3RXInterrupt(void) {
     while (U3STAbits.URXDA) { // while data is available    
         rx_buffer_3[rx_next_3++] = U3RXREG; // copy byte to buffer

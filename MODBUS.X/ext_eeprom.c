@@ -3,9 +3,38 @@
 #include <libpic30.h>
 #include <stdlib.h>
 
-void init_ext_eeprom(void) {
-    I2C1_Initialize();
+bool eeprom_en;
 
+void init_ext_eeprom(void) {
+    _TRISE0 = 0; //eeprom hard reset
+    _LATE0 = 1; //enable eeprom
+    eeprom_en = true;
+    
+    I2C1_Initialize();
+    
+    return;
+}
+
+void ext_eeprom_enable(void) {
+    _LATE0 = 1;
+    eeprom_en = true;
+    
+    return;
+}
+
+void ext_eeprom_disable(void) {
+    _LATE0 = 0;
+    eeprom_en = false;
+    
+    return;
+}
+
+void ext_eeprom_reboot(void) {
+    ext_eeprom_disable();
+    __delay_ms(500);
+    ext_eeprom_enable();
+    __delay_ms(500);
+    
     return;
 }
 
@@ -13,13 +42,18 @@ bool ext_eeprom_ready(void) {
     uint8_t cont;
 
     cont = UINT8_MAX;
-
-    while (!I2C1_get_ack(EEPROM_ADDR) && cont--) {
-        __delay_ms(10);
+    
+    if (!eeprom_en) {
+        ext_eeprom_enable();
+        __delay_ms(50);
     }
 
-    if (!cont)
-        return false;
+    while (!I2C1_get_ack(EEPROM_ADDR) && cont--) {
+        ext_eeprom_reboot();
+
+        if (!cont)
+            return false;
+    }
 
     return true;
 }
@@ -55,11 +89,11 @@ bool write_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
     block_addr = ((uint16_t) (address / EEPROM_PAGE_SIZE)) * EEPROM_PAGE_SIZE;
     offset = address - block_addr;
     read_buffer = NULL;
-    read_buffer = (uint8_t *) malloc(EEPROM_PAGE_SIZE * sizeof(uint8_t));
+    read_buffer = (uint8_t *) malloc(EEPROM_PAGE_SIZE * sizeof (uint8_t));
 
     if (read_buffer == NULL)
         return false;
-    
+
     do {
         I2C1_get_data(EEPROM_ADDR, block_addr, read_buffer, EEPROM_PAGE_SIZE);
 
