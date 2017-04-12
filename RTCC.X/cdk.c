@@ -17,8 +17,7 @@
 
 int main(void) {
 
-    _TRISG8 = 0;
-    LATG |= (1 << 8);
+    TRISG &= ~(1 << 8);
     RTCC_init();
     
     while (true) {

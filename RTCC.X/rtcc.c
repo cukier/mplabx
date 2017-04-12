@@ -39,7 +39,7 @@ void RTCC_reset(uint8_t u8) {
 }
 
 void __attribute__((interrupt, no_auto_psv)) _RTCCInterrupt(void)
-{
-    _LATG8 = !_LATG8;
+{    
+    LATG ^= (1 << 8);
     IFS3bits.RTCIF=0;
 }
