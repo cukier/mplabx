@@ -68,7 +68,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define TEST_SIZE   10
+#define TEST_SIZE   512
 #define TEST_ADDR   0
 
 int main(void) {
@@ -91,7 +91,8 @@ int main(void) {
     printf("\nHello\n");
 
     for (cont = 0; cont < TEST_SIZE; ++cont) {
-        array_b[cont] = (uint8_t) (cont & 0xFF);
+        //array_b[cont] = (uint8_t) (cont & 0xFF);
+        array_b[cont] = 0xFF;
     }
 
     ext_eeprom_read(0, array_a, TEST_SIZE);
