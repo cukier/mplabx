@@ -79,7 +79,14 @@ int main(void) {
 
     init_ext_eeprom();
     uart_init();
-    __C30_UART = 2;
+#ifdef USE_UART_1
+    __C30_UART = 1;
+#endif
+    
+#ifdef USE_UART_2
+    __C30_UART = 1;
+#endif
+    
     __delay_ms(500);
     printf("\nHello\n");
 
