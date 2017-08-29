@@ -59,7 +59,7 @@ bool ext_eeprom_ready(void) {
 }
 
 bool read_ext_eeprom(uint16_t address, uint8_t *data, uint16_t i_size) {
-
+    
     if ((address + i_size) > (uint16_t) EEPROM_SIZE)
         return false;
 

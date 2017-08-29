@@ -68,7 +68,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define TEST_SIZE   4098
+#define TEST_SIZE   127
 #define TEST_ADDR   0
 
 int main(void) {
