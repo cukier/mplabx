@@ -68,7 +68,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define TEST_SIZE   127
+#define TEST_SIZE   10
 #define TEST_ADDR   0
 
 int main(void) {
@@ -77,7 +77,7 @@ int main(void) {
     uint8_t array_c[TEST_SIZE] = {0};
     uint16_t cont;
 
-    init_ext_eeprom();
+    ext_eeprom_init();
     uart_init();
 #ifdef USE_UART_1
     __C30_UART = 1;
@@ -91,12 +91,12 @@ int main(void) {
     printf("\nHello\n");
 
     for (cont = 0; cont < TEST_SIZE; ++cont) {
-        array_b[cont] = (uint8_t) cont;
+        array_b[cont] = (uint8_t) (cont & 0xFF);
     }
 
-    read_ext_eeprom(0, array_a, TEST_SIZE);
-    write_ext_eeprom(0, array_b, TEST_SIZE);
-    read_ext_eeprom(0, array_c, TEST_SIZE);
+    ext_eeprom_read(0, array_a, TEST_SIZE);
+    ext_eeprom_write(0, array_b, TEST_SIZE);
+    ext_eeprom_read(0, array_c, TEST_SIZE);
 
     for (cont = 0; cont < TEST_SIZE; ++cont) {
         printf("%03u %03u %03u %03u\n", cont, array_a[cont], array_b[cont], array_c[cont]);
