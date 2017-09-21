@@ -11,7 +11,10 @@
 #include <stdlib.h>
 #include <libpic30.h>
 
-#define MB_MAX_SIZE EEPROM_SIZE
+#define MB_MAX_SIZE     EEPROM_SIZE
+#define MB_BUFFER_SIZE  0x012C
+
+volatile static uint8_t m_address = 1;
 
 typedef enum modbus_command_exception_code {
     EXCEPTION_CODE_0,
@@ -98,7 +101,7 @@ bool return_error(uint8_t address, modbus_command_t command,
 }
 
 bool slave_response(void) {
-    uint8_t my_address, response[256], request[256], tmp_var[2];
+    uint8_t response[MB_BUFFER_SIZE], request[MB_BUFFER_SIZE], tmp_var[2];
     uint16_t register_value, register_address, b_count, cont,
             request_crc, aux_addr, index_rda, n, my_crc;
     bool ret, respond_now;
@@ -107,25 +110,33 @@ bool slave_response(void) {
     respond_now = false;
     n = 0;
 #ifdef MODBUS_UART_1
-    n = uart1_get(request, 256);
+    n = uart1_getRxSize();
+
+    if (n != 0) {
+        __delay_ms(100);
+        n = uart1_get(request, MB_BUFFER_SIZE);
+    }
 #endif
 #ifdef MODBUS_UART_2
-    n = uart2_get(request, 256);
+    n = uart2_getRxSize();
+
+    if (n != 0) {
+        __delay_ms(100);
+        n = uart2_get(request, MB_BUFFER_SIZE);
+    }
 #endif
 #ifdef MODBUS_UART_3
-    n = uart3_get(request, 256);
-#endif
+    n = uart3_getRxSize();
 
+    if (n != 0) {
+        __delay_ms(100);
+        n = uart3_get(request, MB_BUFFER_SIZE);
+    }
+#endif
+    
     if (n != 0) {
         index_rda = n;
         respond_now = true;
-#ifdef USE_PIVO_STR
-        my_address = pivo->endereco;
-#elif defined MODBUS_SLV_ADDR
-        my_address = MODBUS_SLV_ADDR;
-#else
-        my_address = 1;
-#endif
     }
 
     if (respond_now) {
@@ -139,26 +150,26 @@ bool slave_response(void) {
         request_crc = ((request[index_rda - 1] << 8) | (request[index_rda - 2]));
         my_crc = CRC16(request, index_rda - 2);
 
-        if ((my_address == request[MODBUS_FIELDS_ADDRESS])
-                && my_crc == request_crc) {
+        if ((m_address == request[MODBUS_FIELDS_ADDRESS])
+                && (my_crc == request_crc)) {
             switch (request[MODBUS_FIELDS_FUNCTION]) {
                 case READ_HOLDING_REGISTERS_COMMAND:
                     if (register_value == 0 || register_value > 0x7D) {
-                        ret = return_error(my_address, READ_HOLDING_REGISTERS_COMMAND,
+                        ret = return_error(m_address, READ_HOLDING_REGISTERS_COMMAND,
                                 EXCEPTION_CODE_3);
                     } else if (((register_value + register_address) * 2)
                             > (uint32_t) MB_MAX_SIZE) {
-                        ret = return_error(my_address, READ_HOLDING_REGISTERS_COMMAND,
+                        ret = return_error(m_address, READ_HOLDING_REGISTERS_COMMAND,
                                 EXCEPTION_CODE_2);
                     } else if (!ext_eeprom_ready()) {
-                        ret = return_error(my_address, READ_HOLDING_REGISTERS_COMMAND,
+                        ret = return_error(m_address, READ_HOLDING_REGISTERS_COMMAND,
                                 EXCEPTION_CODE_0);
                     } else {
                         b_count = 2 * register_value;
-                        response[0] = my_address;
+                        response[0] = m_address;
                         response[1] = READ_HOLDING_REGISTERS_COMMAND;
                         response[2] = (uint8_t) b_count;
-                        read_ext_eeprom(aux_addr, &response[3], b_count);
+                        ext_eeprom_read(aux_addr, &response[3], b_count);
                         request_crc = CRC16(response, b_count + 3);
                         response[b_count + 3] = (uint8_t) (request_crc & 0xFF);
                         response[b_count + 4] = (uint8_t) ((request_crc & 0xFF00) >> 8);
@@ -168,15 +179,15 @@ bool slave_response(void) {
 
                 case WRITE_SINGLE_REGISTER_COMMAND:
                     if (((register_address + 1) * 2) > (uint32_t) MB_MAX_SIZE) {
-                        ret = return_error(my_address, WRITE_SINGLE_REGISTER_COMMAND,
+                        ret = return_error(m_address, WRITE_SINGLE_REGISTER_COMMAND,
                                 EXCEPTION_CODE_2);
                     } else if (!ext_eeprom_ready()) {
-                        ret = return_error(my_address, READ_HOLDING_REGISTERS_COMMAND,
+                        ret = return_error(m_address, READ_HOLDING_REGISTERS_COMMAND,
                                 EXCEPTION_CODE_0);
                     } else {
                         tmp_var[0] = (uint8_t) ((register_value & 0xFF00) >> 8);
                         tmp_var[1] = (uint8_t) (register_value & 0xFF);
-                        write_ext_eeprom(aux_addr, tmp_var, 2);
+                        ext_eeprom_write(aux_addr, tmp_var, 2);
 
                         for (cont = 0; cont < index_rda; ++cont) {
                             response[cont] = request[cont];
@@ -188,14 +199,14 @@ bool slave_response(void) {
 
                 case WRITE_MULTIPLE_REGISTERS_COMMAND:
                     if (((register_address * 2) + b_count) > (uint32_t) MB_MAX_SIZE) {
-                        ret = return_error(my_address, WRITE_SINGLE_REGISTER_COMMAND,
+                        ret = return_error(m_address, WRITE_SINGLE_REGISTER_COMMAND,
                                 EXCEPTION_CODE_2);
                     } else if (!ext_eeprom_ready()) {
-                        ret = return_error(my_address, READ_HOLDING_REGISTERS_COMMAND,
+                        ret = return_error(m_address, READ_HOLDING_REGISTERS_COMMAND,
                                 EXCEPTION_CODE_0);
                     } else {
-                        write_ext_eeprom(aux_addr, &request[7], b_count);
-                        response[0] = my_address;
+                        ext_eeprom_write(aux_addr, &request[7], b_count);
+                        response[0] = m_address;
                         response[1] = WRITE_MULTIPLE_REGISTERS_COMMAND;
                         response[2] = (uint8_t) ((register_address & 0xFF00) >> 8);
                         response[3] = (uint8_t) (register_address & 0xFF);
@@ -215,10 +226,29 @@ bool slave_response(void) {
 }
 
 bool modbus_init(void) {
-    init_ext_eeprom();
+    ext_eeprom_init();
 
     if (!ext_eeprom_ready())
         return false;
 
     return true;
+}
+
+void modbus_set_addr(uint16_t address) {
+    m_address = address;
+    uint8_t str[2] = { 0 };
+    
+    str[0] = (uint8_t) (address & 0xFF);
+    
+#ifdef MODBUS_UART_1
+    uart1_send(str, 1);
+#endif
+#ifdef MODBUS_UART_2
+    uart2_send(str, 1);
+#endif
+#ifdef MODBUS_UART_3
+    uart3_send(str, 1);
+#endif
+
+    return;
 }

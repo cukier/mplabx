@@ -1,6 +1,8 @@
 #include "serial.h"
 #include "sys.h"
 #include <libpic30.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #define RX_BUFFER_SIZE    0x012C
 #define TX_BUFFER_SIZE    0x012C
@@ -16,6 +18,10 @@ uint8_t rx_buffer_2[RX_BUFFER_SIZE], tx_buffer_2[RX_BUFFER_SIZE];
 #ifdef USE_UART_3
 uint16_t rx_head_3, rx_next_3, tx_head_3, tx_next_3;
 uint8_t rx_buffer_3[RX_BUFFER_SIZE], tx_buffer_3[RX_BUFFER_SIZE];
+#endif
+#ifdef USE_UART_4
+uint16_t rx_head_4, rx_next_4, tx_head_4, tx_next_4;
+uint8_t rx_buffer_4[RX_BUFFER_SIZE], tx_buffer_4[RX_BUFFER_SIZE];
 #endif
 
 void uart_init(void) {
@@ -84,6 +90,28 @@ void uart_init(void) {
     _TRISD11 = 0; // TX3 -> output
     _TRISD0 = 1; // RX3 -> input
 #endif
+#ifdef USE_UART_4
+    rx_head_4 = 0;
+    rx_next_4 = 0;
+    tx_head_4 = 0;
+    tx_next_4 = 0;
+
+    _U4RXIE = 0; // disable UART4 Rx interrupt
+    _U4TXIE = 0; // disable UART4 Tx interrupt = 0; // disable the UART module while configuring
+
+    U4MODEbits.UARTEN = 0; // disable the UART module while configuring
+    U4MODE = 0;
+    U4MODEbits.BRGH = 1; // high speed baud rate
+    U4STA = 0;
+    U4STAbits.UTXISEL1 = 1; // interrupt when Tx buffer is empty
+    U4STAbits.UTXEN = 1; // enable UART transmitter
+    U4STAbits.URXEN = 1;
+
+    U4BRG = ((FCY / BAUDRATE_4) / 4) - 1;
+
+    _TRISD4 = 0; // TX4 -> output
+    _TRISD5 = 1; // RX4 -> input
+#endif
 
     __builtin_write_OSCCONL(OSCCON & 0xBF); // unlock peripheral pin select registers
 #ifdef USE_UART_1
@@ -96,8 +124,12 @@ void uart_init(void) {
 #endif
 #ifdef USE_UART_3    
     _RP12R = 19; // UART3 transmit
-    _U3RXR = 11; // UART2 receive
+    _U3RXR = 11; // UART3 receive
 #endif    
+#ifdef USE_UART_4
+    _RP25R = 21; // UART4 transmit
+    _U4RXR = 20; // UART4 receive
+#endif   
     __builtin_write_OSCCONL(OSCCON | 0x40); // lock peripheral pin select registers
 
 #ifdef USE_UART_1    
@@ -129,6 +161,16 @@ void uart_init(void) {
     U3STAbits.UTXEN = 1; // enable UART transmitter
     U3STAbits.URXEN = 1;
     _U3RXIE = 1; // enable UART Rx interrupt
+#endif
+#ifdef USE_UART_4
+    _U4RXIF = 0; // clear Rx interrupt flag
+    _U4TXIF = 0; // clear Tx interrupt flag
+
+    U4MODEbits.UARTEN = 1; // enable the UART module now that its configured
+
+    U4STAbits.UTXEN = 1; // enable UART transmitter
+    U4STAbits.URXEN = 1;
+    _U4RXIE = 1; // enable UART Rx interrupt
 #endif
     return;
 }
@@ -372,5 +414,99 @@ uint16_t uart3_getRxSize(void) {
     return rx_next_3 - rx_head_3
             + (rx_head_3 > rx_next_3 ? RX_BUFFER_SIZE : 0);
 }
+#endif
+
+#ifdef USE_UART_4
+
+void __attribute__((interrupt, no_auto_psv)) _U4RXInterrupt(void) {
+    while (U4STAbits.URXDA) { // while data is available    
+        rx_buffer_4[rx_next_4++] = U4RXREG; // copy byte to buffer
+        rx_next_4 %= RX_BUFFER_SIZE; // protect against rollover
+
+        /* accommodate overflow */
+        if (rx_head_4 == rx_next_4)
+            rx_head_4 = (rx_head_4 + 1) % RX_BUFFER_SIZE;
+    }
+
+    _U4RXIF = 0; // clear Rx interrupt flag
+}
+
+void __attribute__((interrupt, no_auto_psv)) _U4TXInterrupt(void) {
+    _U4TXIF = 0; // clear Tx interrupt flag
+
+    /* transmit if transmit queue has room and buffer is not empty */
+    while (!(U4STAbits.UTXBF) && (tx_head_4 != tx_next_4)) {
+        U4TXREG = tx_buffer_4[tx_head_4++];
+        tx_head_4 %= TX_BUFFER_SIZE;
+    }
+}
+
+uint16_t getTxSpace_4(void) {
+    return tx_head_4 - tx_next_4 - 1
+            + (tx_head_4 <= tx_next_4 ? TX_BUFFER_SIZE : 0);
+}
+
+bool uart4_send(uint8_t *data, uint16_t size) {
+    /* can't send nonexistent data or no data */
+    if (!data || !size)
+        return false;
+
+    /* make sure room is available in buffer */
+    while (getTxSpace_4() < size);
+
+    /* send bytes while bytes still need to be sent */
+    while (size--) {
+        tx_buffer_4[tx_next_4++] = *data;
+
+        /* circular queue rollover protection */
+        tx_next_4 %= TX_BUFFER_SIZE;
+
+        /* accommodate overflow */
+        if (tx_head_4 == tx_next_4)
+            tx_head_4 = (tx_head_4 + 1) % TX_BUFFER_SIZE;
+
+        ++data;
+    }
+
+    _U4TXIE = 1;
+    _U4TXIF = 1;
+
+    return true;
+}
+
+uint16_t uart4_get(uint8_t *data, uint16_t size) {
+    uint16_t count = 0;
+
+    if (!data)
+        return false;
+
+    _U4RXIE = 0;
+
+    while (size-- && (rx_head_4 != rx_next_4)) {
+        data[count++] = rx_buffer_4[rx_head_4++];
+        rx_head_4 %= RX_BUFFER_SIZE;
+    }
+
+    _U4RXIE = 1;
+
+    return count;
+}
+
+uint16_t uart4_getRxSize(void) {
+    return rx_next_4 - rx_head_4
+            + (rx_head_4 > rx_next_4 ? RX_BUFFER_SIZE : 0);
+}
+
+//void uart4_printf(char *format, ...) {
+//	va_list args;
+//
+//	va_start(args, format);
+//	vsnprintf(uart_buffer, UART_BUFFER_SIZE, format, args);
+//	va_end(args);
+//
+//	uart_puts(uart_buffer);
+//	
+//	return;
+//}
 #endif
 

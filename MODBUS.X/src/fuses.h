@@ -1,10 +1,12 @@
-/*
- * File:   main.c
- * Author: cuki
- *
- * Created on 8 de Março de 2017, 12:45
- */
 
+#ifndef FUSES_H
+#define	FUSES_H
+
+// PIC24FJ1024GB606 Configuration Bit Settings
+
+// 'C' source line config statements
+
+// FSEC
 #pragma config BWRP = OFF               // Boot Segment Write-Protect bit (Boot Segment may be written)
 #pragma config BSS = DISABLED           // Boot Segment Code-Protect Level bits (No Protection (other than BWRP))
 #pragma config BSEN = OFF               // Boot Segment Control bit (No Boot Segment)
@@ -26,7 +28,7 @@
 
 // FOSC
 #pragma config POSCMD = HS              // Primary Oscillator Mode Select bits (HS Crystal Oscillator Mode)
-#pragma config OSCIOFCN = ON            // OSC2 Pin Function bit (OSC2 is general purpose digital I/O pin)
+#pragma config OSCIOFCN = OFF           // OSC2 Pin Function bit (OSC2 is clock output)
 #pragma config SOSCSEL = ON             // SOSC Power Selection Configuration bits (SOSC is used in crystal (SOSCI/SOSCO) mode)
 #pragma config PLLSS = PLL_PRI          // PLL Secondary Selection Configuration bit (PLL is fed by the Primary oscillator)
 #pragma config IOL1WAY = ON             // Peripheral pin select configuration bit (Allow only one reconfiguration)
@@ -35,14 +37,14 @@
 // FWDT
 #pragma config WDTPS = PS32768          // Watchdog Timer Postscaler bits (1:32,768)
 #pragma config FWPSA = PR128            // Watchdog Timer Prescaler bit (1:128)
-#pragma config FWDTEN = OFF             // Watchdog Timer Enable bits (WDT and SWDTEN disabled)
+#pragma config FWDTEN = ON              // Watchdog Timer Enable bits (WDT Enabled)
 #pragma config WINDIS = OFF             // Watchdog Timer Window Enable bit (Watchdog Timer in Non-Window mode)
 #pragma config WDTWIN = WIN25           // Watchdog Timer Window Select bits (WDT Window is 25% of WDT period)
 #pragma config WDTCMX = WDTCLK          // WDT MUX Source Select bits (WDT clock source is determined by the WDTCLK Configuration bits)
 #pragma config WDTCLK = LPRC            // WDT Clock Source Select bits (WDT uses LPRC)
 
 // FPOR
-#pragma config BOREN = OFF              // Brown Out Enable bit (Brown Out Disabled)
+#pragma config BOREN = ON               // Brown Out Enable bit (Brown Out Enable Bit)
 #pragma config LPCFG = OFF              // Low power regulator control (No Retention Sleep)
 #pragma config DNVPEN = ENABLE          // Downside Voltage Protection Enable bit (Downside protection enabled using ZPBOR when BOR is inactive)
 
@@ -54,29 +56,13 @@
 // FDEVOPT1
 #pragma config ALTCMPI = DISABLE        // Alternate Comparator Input Enable bit (C1INC, C2INC, and C3INC are on their standard pin locations)
 #pragma config TMPRPIN = OFF            // Tamper Pin Enable bit (TMPRN pin function is disabled)
-#pragma config SOSCHP = OFF             // SOSC High Power Enable bit (valid only when SOSCSEL = 1 (Enable SOSC low power mode)
+#pragma config SOSCHP = ON              // SOSC High Power Enable bit (valid only when SOSCSEL = 1 (Enable SOSC high power mode (default))
 #pragma config ALTVREF = ALTREFEN       // Alternate Voltage Reference Location Enable bit (VREF+ and CVREF+ on RA10, VREF- and CVREF- on RA9)
 
-#include "sys.h"
-#include "modbus.h"
-#include "serial.h"
+// #pragma config statements should precede project file includes.
+// Use project enums instead of #define for ON and OFF.
+
 #include <xc.h>
-#include <libpic30.h>
-#include <p24FJ1024GB606.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-int main(void) {
-    
-    uart_init();
-    modbus_init();    
-    
-    while(true) {
-        __delay_ms(100);
-        slave_response();
-    }        
+#endif	/* XC_HEADER_TEMPLATE_H */
 
-    return 0;
-}
