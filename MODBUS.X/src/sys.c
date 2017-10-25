@@ -19,10 +19,9 @@ bool sys_init(void) {
     hb_init();
     uart_init();
     //RTCC_init();
-    //esp_init();
+    esp_init();
     ext_eeprom_init();
-    //PIVO_mem_init();
-    //modbus_set_addr(PIVO_get_address());
+    modbus_set_addr(1);
     __delay_ms(300);
 #ifdef DEBUG
     __C30_UART = 1;
